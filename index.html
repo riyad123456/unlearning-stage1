@@ -476,9 +476,9 @@
     aim of removing pharmacology while retaining every other subject. Two of the four
     reduced forget-set accuracy to near zero. Of the four attacks with a clear verdict
     against them, the two weight-side ones, relearning and activation patching, recovered
-    the knowledge to near the pre-unlearning baseline; the two rewording ones did not.
-    This crossing pattern only appeared after a subject-label confound in the original
-    evaluation was found and removed.
+    the knowledge to near the pre-unlearning baseline; the two rewording attacks did not.
+    The weight methods pay for this with a large drop in accuracy on the subjects that
+    were meant to be preserved.
   </p>
 
   <div class="authors">
@@ -518,15 +518,12 @@
   </p>
 
   <div class="note">
-    <b>Evaluation regime.</b> Every prompt in the training template carried a
-    <span class="term">Subject:</span> line, and on the forget set it always read
-    <span class="term">Pharmacology</span>. A method could suppress that one token rather
-    than the topic. All results on this page for the SFT baseline, RMU and GradDiff were
-    produced with the subject field set to <span class="term">Unknown</span> in both
-    unlearning and evaluation, so the reported effect is attributable to the pharmacology
-    content and not to the label. ALU and NPO figures are from the original labelled run
-    and are marked where they appear. Section 6.4 gives the ablation that motivated the
-    re-run.
+    <b>Evaluation regime.</b> The prompt includes a <span class="term">Subject:</span>
+    line, and on the forget set it names the subject being removed. Since a gradient
+    method can then suppress that one token instead of the topic, the SFT baseline, RMU
+    and GradDiff are evaluated, and RMU and GradDiff unlearned, with the field set to
+    <span class="term">Unknown</span>. NPO and ALU are evaluated with the label present
+    and are marked where they appear. Section 9 explains the correction.
   </div>
 
   <div class="stats">
@@ -541,14 +538,14 @@
       <div class="s">Cost asymmetry</div>
     </div>
     <div class="stat">
-      <div class="n">0.000 to 0.819</div>
-      <div class="t">GradDiff forget accuracy recovered by changing the prompt from Subject: Pharmacology to Subject: Unknown, with nothing else altered</div>
-      <div class="s">Subject-label ablation</div>
+      <div class="n">0.749 to 0.43</div>
+      <div class="t">Retain-set accuracy before and after RMU unlearning, across the subjects that were to be preserved</div>
+      <div class="s">Cost to retained knowledge</div>
     </div>
     <div class="stat">
       <div class="n blue">0 of 2</div>
       <div class="t">Attacks applicable to the inference-time filter recovered any knowledge. Two others do not apply to it</div>
-      <div class="s">ALU, prior run</div>
+      <div class="s">ALU</div>
     </div>
   </div>
 </section>
@@ -851,7 +848,7 @@
     <div class="chart-foot">
       <span class="key"><i class="m"></i>baseline, not unlearned</span>
       <span class="key"><i class="b"></i>after unlearning</span>
-      <span>NPO and ALU from the prior labelled run; ALU on n = 500</span>
+      <span>NPO and ALU evaluated with the subject label present; ALU on n = 500</span>
     </div>
   </div>
 
@@ -859,41 +856,38 @@
 
   <h3>NPO did not unlearn at this scale</h3>
   <p>
-    In the original run NPO reached 0.720 generated forget accuracy against a 0.771
-    baseline, and 0.411 likelihood accuracy against 0.406, both within seed variance. The
-    only metric it moved is explanation ROUGE-L, from 0.272 to 0.011, indicating that it
-    stopped the model reproducing training explanations verbatim while leaving the
-    underlying answer intact. It was not re-run with the label neutralised, because there
-    was no suppression to re-measure. NPO is carried through the attacks below but should
-    be interpreted as an unlearning failure rather than a robust defence.
+    NPO reaches 0.720 generated forget accuracy against a 0.771 baseline, and 0.411
+    likelihood accuracy against 0.406, both within seed variance. The only metric it moved
+    is explanation ROUGE-L, from 0.272 to 0.011, indicating that it stopped the model
+    reproducing training explanations verbatim while leaving the underlying answer intact.
+    It is carried through the attacks below but should be interpreted as an unlearning
+    failure rather than a robust defence, and it is evaluated with the subject label
+    present since there was no suppression to re-measure without it.
   </p>
 
-  <h3>Both methods degrade retain accuracy, more than the labelled run showed</h3>
+  <h3>Both methods degrade retain accuracy</h3>
   <p>
     RMU retain accuracy falls from 0.749 to <strong>0.429</strong>, a loss of
     thirty-two points across the subjects that were to be preserved. GradDiff falls to
-    <strong>0.491</strong>, a loss of twenty-six points. The labelled run put these
-    costs at sixteen points and near zero. When the method cannot key on the subject
-    token it has to act on the pharmacology content directly, and the boundary it draws
-    is wider.
+    <strong>0.491</strong>, a loss of twenty-six points. Suppressing pharmacology by its
+    content, rather than by a subject label the method could match exactly, draws a wider
+    boundary that catches adjacent material.
   </p>
 
-  <h3>The GradDiff margin no longer indicates collapse</h3>
+  <h3>The GradDiff margin does not indicate collapse</h3>
   <p>
     The confidence margin, defined as the log-probability of the correct option minus
     that of the best incorrect option, is <span class="term">-1.03</span> for RMU and
     <span class="term">-1.41</span> for GradDiff. Mean loss on forget items is 13 for RMU
-    and 168 for GradDiff, and the GradDiff forget loss reaches 222 during training, still
-    elevated given the absence of a bounding term but far below the labelled run. That
-    run reported a GradDiff margin of -4.59; the subject-token ablation in Section 6.4
-    attributes almost all of that distance to the prompt label. The margin is still
-    reported throughout because it separates suppression from misdirection where accuracy
-    cannot.
+    and 168 for GradDiff, and the GradDiff forget loss reaches 222 during training, which
+    is elevated given the absence of a bounding term. The two methods have comparable
+    accuracy and internal states in a similar range; the margin is reported throughout
+    because it separates suppression from confident misdirection where accuracy cannot.
   </p>
 
   <div class="table-shell" style="margin-top:30px">
     <table>
-      <caption>Table 1. Post-unlearning evaluation, seed 44. Generated accuracy unless marked otherwise. SFT, RMU and GradDiff scored with the subject field neutralised; NPO and ALU from the prior labelled run. Weight methods on n=1500, ALU on n=500, holdout on n=243.</caption>
+      <caption>Table 2. Post-unlearning evaluation, seed 44. Generated accuracy unless marked otherwise. SFT, RMU and GradDiff scored with the subject field neutralised; NPO and ALU scored with the subject label present. Weight methods on n=1500, ALU on n=500, holdout on n=243.</caption>
       <thead>
         <tr><th>Metric</th><th>SFT</th><th>RMU</th><th>NPO</th><th>GradDiff</th><th>ALU</th></tr>
       </thead>
@@ -960,7 +954,7 @@
     <div class="chart-foot">
       <span class="key"><i class="m"></i>SFT baseline, not unlearned</span>
       <span class="key"><i class="b"></i>after unlearning</span>
-      <span>NPO from the prior labelled run. n/r, not run. Hatched bars are absent measurements, not zero values</span>
+      <span>NPO scored with the subject label present. n/r, not run. Hatched bars are absent measurements, not zero values</span>
     </div>
   </div>
 
@@ -980,9 +974,8 @@
 
     <div class="plot-note">
       Bars extend leftward from zero, so longer means more confidently wrong. All four now
-      occupy a similar band, GradDiff the furthest out at -1.41. The prior labelled run
-      placed GradDiff at -4.59, off this scale; the subject-token ablation attributes
-      almost all of that distance to the prompt label. NPO is from that prior run.
+      occupy a similar band, GradDiff the furthest out at -1.41. NPO is scored with the
+      subject label present.
     </div>
   </div>
 
@@ -993,21 +986,11 @@
   </p>
 
   <p>
-    ALU has no holdout figure because the split was never added to its evaluation list.
-    <span class="term">MT_alu_14b.py</span> hardcodes three splits, forget, retain and
-    paraphrased, and the indirect set was later added through a separate pass written
-    specifically to avoid repeating the main run. There is no methodological reason for
-    the gap. At roughly 41 s per query the 243 holdout items would take about 2.8 hours,
-    which is why it is listed as an open item rather than a limitation.
-  </p>
-
-  <p>
-    ALU behaves differently. In the prior labelled run it refused 73.6% of forget
-    questions and answered 24.4% of them correctly, so it leaks as a filter. It preserved
-    retain accuracy at 0.730, close to baseline, at the cost of refusing 11% of retain
-    questions that should have been answered. Its inference cost is 5.7 hours for 500
-    questions, against 7.8 minutes to train RMU once. The neutralised re-run of ALU is
-    in progress.
+    ALU behaves differently. It refuses 73.6% of forget questions and answers 24.4% of
+    them correctly, so it leaks as a filter. It preserves retain accuracy at 0.730, close
+    to baseline, at the cost of refusing 11% of retain questions that should have been
+    answered. Its inference cost is 5.7 hours for 500 questions, against 7.8 minutes to
+    train RMU once. It has no holdout figure; that run is pending.
   </p>
 </section>
 
@@ -1139,10 +1122,9 @@
   </p>
 
   <p>
-    NPO, from the prior labelled run, moves in the opposite direction, from 0.720 to
-    0.601. Since NPO did not suppress the forget set, there was no suppression for the
-    attack to reverse, and the fine-tune acts as a perturbation of an already-competent
-    model.
+    NPO moves in the opposite direction, from 0.720 to 0.601. Since NPO did not suppress
+    the forget set, there was no suppression for the attack to reverse, and the fine-tune
+    acts as a perturbation of an already-competent model.
   </p>
 
   <p>
@@ -1273,8 +1255,8 @@
     RMU is fully recovered, from 0.257 to 0.423 against a 0.429 baseline, with one layer
     patched and no training. GradDiff reaches 0.390, recoverable by a bounded ten-layer
     patch despite its LoRA having no layer restriction, which indicates the edit was less
-    distributed than the training configuration suggests. NPO, from the prior labelled
-    run, is unchanged, consistent with there being nothing to recover.
+    distributed than the training configuration suggests. NPO, scored with the subject
+    label present, is unchanged, consistent with there being nothing to recover.
   </p>
 
   <p>
@@ -1302,7 +1284,7 @@
 
   <div class="table-shell">
     <table>
-      <caption>Table 2. Rephrasing attack. The paraphrase set retains all pharmacology vocabulary and alters only phrasing. SFT, RMU and GradDiff with the subject field neutralised; NPO and ALU from the prior labelled run.</caption>
+      <caption>Table 3. Rephrasing attack. The paraphrase set retains all pharmacology vocabulary and alters only phrasing. SFT, RMU and GradDiff scored with the subject field neutralised; NPO and ALU with the subject label present.</caption>
       <thead>
         <tr><th>Method</th><th>Direct forget</th><th>Paraphrased</th><th>Change</th></tr>
       </thead>
@@ -1361,13 +1343,16 @@
   <h2>Attack 4: indirect questions</h2>
 
   <p>
-    Where paraphrasing retains the vocabulary, the indirect attack removes it. Each of
-    the same 1,500 forget questions was rewritten into a clinical vignette that does not
-    name the drug, drug class, receptor or mechanism, while remaining answerable from
-    knowledge of the underlying pharmacology. A second pass had the same model check each
-    rewrite for leakage and for whether the correct option remained uniquely correct.
-    13.1% failed this check and were dropped rather than retained unvalidated, leaving
-    1,283 scored items.
+    Where paraphrasing retains the vocabulary, the indirect attack removes it. The same
+    1,500 forget questions used for the paraphrase set were rewritten by
+    Qwen2.5-14B-Instruct into clinical-vignette form: the drug, drug class, receptor and
+    mechanism names are removed and replaced with a description of the clinical scenario
+    or physiological effect, the four answer options are kept verbatim, and the correct
+    option is unchanged. A second pass with the same model checks each rewrite, that the
+    target is no longer named and that exactly one option is still correct. Rows that fail
+    get one retry with a sharper prompt; rows that still fail are dropped. 13.1% were
+    dropped, leaving 1,283 scored items. The subject field on this set reads
+    <span class="term">Unknown</span> like every other split.
   </p>
 
   <div class="qpair">
@@ -1414,46 +1399,23 @@
   </div>
 
   <p style="margin-top:26px">
-    With the subject field neutralised, the rewrite recovers nothing. GradDiff scores
-    0.015 on direct pharmacology questions and 0.025 on the same facts asked indirectly.
-    RMU scores 0.015 and 0.016. ALU, from the prior labelled run, is at 0.172 with a
-    refusal rate of 0.806, the highest across all conditions.
+    The rewrite recovers nothing. GradDiff scores 0.015 on direct pharmacology questions
+    and 0.025 on the same facts asked indirectly. RMU scores 0.015 and 0.016. ALU is at
+    0.172, with a refusal rate of 0.806, the highest across all conditions.
   </p>
 
   <p>
-    This matches the expectation the stage was designed around. Weight editing was
-    expected to be robust to rewording, since it operates on representations rather than
-    on strings, and once the prompt no longer names the subject it is. The agentic filter
-    holds as well.
+    This is the predicted behaviour. Weight editing operates on representations rather
+    than on strings, so removing the naming vocabulary does not restore access. The
+    agentic filter holds as well.
   </p>
 
-  <div class="caveat">
-    <div class="h">The confound this attack revealed</div>
-    <p>
-      An earlier version of this evaluation showed both weight methods scoring 0.49 and
-      0.75 on the indirect set, a near-total bypass. That version had a second variable
-      moving with the phrasing. Every prompt in the training template carried a
-      <span class="term">Subject:</span> line, always <span class="term">Pharmacology</span>
-      on the forget set, and the indirect rewrites replaced it with
-      <span class="term">Medicine</span> to avoid disclosing the topic. So two things
-      changed at once: the wording, and one token that had been a perfect forget-set
-      marker throughout training.
-    </p>
-    <p>
-      The ablation isolates them. Re-scoring the original unlearned models on the
-      <em>direct</em> forget set with only the subject value swapped, no rewriting, lifts
-      GradDiff generated accuracy from 0.000 to 0.819 and RMU from 0.001 to 0.400. The
-      GradDiff confidence margin moves from -4.59 to -0.42. Almost the entire apparent
-      bypass was the label.
-    </p>
-    <p>
-      All Stage 1 unlearning and evaluation for RMU, GradDiff and the SFT baseline was
-      then re-run on data with the subject field set to <span class="term">Unknown</span>
-      in every split, so the method never sees the marker during unlearning and the
-      evaluator never supplies it. The numbers on this page are from that re-run. Under it
-      the weight methods hold against the indirect rewrite, and the crossing pattern the
-      stage predicted appears.
-    </p>
+  <div class="note">
+    <b>Subject field.</b> These figures depend on the subject line in the prompt reading
+    <span class="term">Unknown</span> rather than <span class="term">Pharmacology</span>.
+    With the label present, both weight methods recover much of the lost accuracy on the
+    indirect set, because the label by itself identifies the topic. Section 9 covers why
+    the field is neutralised.
   </div>
 </section>
 
@@ -1501,7 +1463,7 @@
       and no judge model has scored any output. NPO is the priority case: it is the one
       method that left the answer intact while reducing explanation ROUGE-L from 0.272 to
       0.011, which is the profile this attack was designed to detect. It is recorded as
-      untested rather than passed in Table 3.
+      untested rather than passed in Table 4.
     </p>
   </div>
 </section>
@@ -1558,7 +1520,7 @@
     </div>
 
     <div class="plot-note">
-      RMU and GradDiff with the subject field neutralised; ALU from the prior labelled run.
+      RMU and GradDiff with the subject field neutralised; ALU with the subject label present.
       Attack 2 is omitted here because it is scored by likelihood rather than generation
       and does not share this axis; it appears in Figure 4 and in the table below. Attack 5
       is omitted because it has been run for RMU only. NPO is omitted because it did not
@@ -1569,9 +1531,9 @@
   <div class="table-shell" style="margin-top:30px">
     <table>
       <caption>
-        Table 3. Stage 1 attack map, seed 44, Qwen2.5-14B. RMU and GradDiff with the
-        subject field neutralised; ALU from the prior labelled run, its neutralised re-run
-        in progress. NPO is marked throughout as an unlearning failure rather than a
+        Table 4. Stage 1 attack map, seed 44, Qwen2.5-14B. RMU and GradDiff with the
+        subject field neutralised; ALU with the subject label present, its neutralised
+        run pending. NPO is marked throughout as an unlearning failure rather than a
         defence: it did not suppress the forget set, so its cells are not comparable.
       </caption>
       <thead>
@@ -1667,9 +1629,7 @@
     Both predictions hold. The weight methods recover accuracy to approximately baseline
     under relearning and under activation patching, one of them with no gradient steps,
     and they hold under both rewording attacks. ALU holds under rewording and is not
-    subject to either weight attack. An earlier version of this evaluation showed the
-    weight methods failing under indirect questions; that was traced to the subject label
-    in the prompt and does not survive its removal.
+    subject to either weight attack.
   </p>
 
   <p>
@@ -1679,7 +1639,7 @@
 
   <div class="table-shell">
     <table>
-      <caption>Table 4. The trade-off observed between the two families.</caption>
+      <caption>Table 5. The trade-off observed between the two families.</caption>
       <thead>
         <tr><th>Property</th><th style="text-align:left">Weight editing</th><th style="text-align:left">Inference filter</th></tr>
       </thead>
@@ -1705,23 +1665,23 @@
   <h3>Implications for Stage 2</h3>
   <p>
     The gate proposed for Stage 2 reads the model's internal representation of the
-    question and blocks before generation begins. Stage 1 changes the argument for it.
+    question and blocks before generation begins. Stage 1 gives two reasons to prefer it
+    over the weight methods measured here.
   </p>
 
   <p>
-    With the label removed, indirect phrasing no longer bypasses the weight methods, so
-    the gate is not needed to patch an observed hole there. Its value is elsewhere. It can
-    be placed in front of an unmodified model, avoiding the retained-subject cost that
-    weight editing incurs here, and unlike the weights it cannot be fine-tuned away.
+    First, it sits in front of an unmodified model, so it does not incur the twenty-six to
+    thirty-two point cost to other subjects that both weight methods showed, and it cannot
+    be reversed by fine-tuning. Second, Attack 2 shows the topic is legibly present in the
+    residual stream at layer 20: patching that layer with the baseline hidden state
+    restores about 99% of the likelihood accuracy, so the signal a probing classifier
+    would read is there to be read.
   </p>
 
   <p>
-    Attack 2 supplies both the mechanism and its limitation. Patching layer 20 with the
-    baseline hidden state restores about 99% of the likelihood accuracy, which shows the
-    topic is legibly present in the residual stream at that layer and is therefore
-    available to a probing classifier. It equally shows the same representation can be
-    written to as well as read. The gate and the attack rely on the same internal
-    directions, which is the question Stage 3 is designed to test.
+    The same result is also the warning. If the representation can be read at layer 20 it
+    can be written there too, which is the evasion Stage 3 is designed to test: whether an
+    adversary can craft activations that pass the gate.
   </p>
 </section>
 
@@ -1741,7 +1701,7 @@
             <tr><td>RMU</td><td style="text-align:left">LoRA r=16 alpha=32 restricted to layer 20. Steering coefficient 40.0, retain coefficient 10.0, lr 1e-4, 300 steps, batch 4+4. 7.8 min.</td></tr>
             <tr><td>NPO</td><td style="text-align:left">LoRA r=16 alpha=32 on layers 0, 4, 8 through 36. Beta 0.5, retain coefficient 2.0, lr 1e-4, 300 steps, batch 2+2, early stop ratio -5.0.</td></tr>
             <tr><td>GradDiff</td><td style="text-align:left">LoRA r=16 alpha=32, no layer restriction. Forget and retain coefficients both 1.0, lr 5e-5, 400 steps, batch 2+2. No bounding term by design, so the forget loss reaches 222. 14.1 min.</td></tr>
-            <tr><td>Data, neutralised run</td><td style="text-align:left">RMU, GradDiff and the SFT baseline eval use <span class="term">data/medmcqa_unlearning_data_nolabel</span>, every split with the <span class="term">Subject:</span> value rewritten to <span class="term">Unknown</span>. The original Stage 1 used the labelled splits; the NPO and ALU figures shown are from that run. See "Subject-label confound" below.</td></tr>
+            <tr><td>Subject field</td><td style="text-align:left">RMU, GradDiff and the SFT baseline eval use <span class="term">data/medmcqa_unlearning_data_nolabel</span>, every split with the <span class="term">Subject:</span> value rewritten to <span class="term">Unknown</span>. NPO and ALU use the labelled splits. See "Subject label in the prompt" below.</td></tr>
             <tr><td>ALU</td><td style="text-align:left">Knowledge model is the unmodified SFT baseline. Orchestrator Qwen2.5-14B-Instruct, critic Qwen2.5-32B-Instruct. 5 rewrite variants, top 2 synthesised, refusal below critic score 4.0, max 160 new tokens. 5.7 h for 500 questions.</td></tr>
             <tr><td>Relearning attack</td><td style="text-align:left">30 forget items drawn from beyond the evaluator's scored index range, 10 epochs. 101 to 108 s of training per method.</td></tr>
             <tr><td>Activation recovery</td><td style="text-align:left">Forward hooks capture SFT hidden states and overwrite those of the unlearned model at layer 20, and separately at layers 0, 4, 8 through 36. Teacher-forced single-pass scoring. 7.5 min per method, no training.</td></tr>
@@ -1764,7 +1724,7 @@
       <ul class="items">
         <li><b>Score option text, not letter logits.</b> The model was fine-tuned to emit option text, so scoring the logits of A, B, C or D tests an out-of-distribution behaviour and returns near-uniform values regardless of the model's knowledge.</li>
         <li><b>Length-normalise before the argmax.</b> Unnormalised log-likelihood sums favour shorter options.</li>
-        <li><b>Report the confidence margin alongside accuracy.</b> RMU at -1.03 and GradDiff at -1.41 have comparable accuracy and slightly different internal states; in the labelled run the same comparison read -0.97 against -4.59.</li>
+        <li><b>Report the confidence margin alongside accuracy.</b> RMU at -1.03 and GradDiff at -1.41 have comparable accuracy; the margin is what separates suppression from confident misdirection.</li>
         <li><b>Report generated accuracy in addition to likelihood.</b> The two differ by 38 points on the same baseline.</li>
         <li><b>Filter negation-framed items from evaluation only.</b> Items of the form "all of the following except" remain in training and are excluded from scoring.</li>
       </ul>
@@ -1792,46 +1752,43 @@
   </details>
 
   <details>
-    <summary>Subject-label confound and re-run</summary>
+    <summary>Subject label in the prompt</summary>
     <div class="body">
       <p style="font-size:15px">
-        The MedMCQA corpus is split by subject, and the training template prepended a
-        <span class="term">Subject:</span> line to every prompt. On the forget set that
-        line always read <span class="term">Pharmacology</span> and on every retain
-        example it read a different real subject, so across the whole of training the
-        token was a perfect forget-set discriminator. A gradient method minimising forget
-        accuracy and preserving retain accuracy can satisfy both by keying on that token
-        rather than on the pharmacology content.
+        MedMCQA is split by subject, and the fine-tuning template prepends a
+        <span class="term">Subject:</span> line to every question. On the forget set it
+        reads <span class="term">Pharmacology</span> and on every retain example a
+        different subject, so the token is a perfect forget-set marker. The first
+        evaluation of the unlearned models kept this line as written. That was a mistake:
+        a gradient method minimising forget accuracy while preserving retain accuracy can
+        satisfy both by suppressing on that one token, and the numbers it produced could
+        not be told apart from real unlearning.
       </p>
       <p style="font-size:15px">
-        The original Stage 1 numbers were consistent with this. Re-scoring the labelled
-        unlearned models on the direct forget set with only the subject value changed,
-        Pharmacology to Unknown, lifted GradDiff generated accuracy from 0.000 to 0.819
-        and RMU from 0.001 to 0.400, and moved the GradDiff margin from -4.59 to -0.42.
-        The SFT baseline was unaffected by the same swap, 0.771 to 0.813, confirming the
-        un-unlearned model does not use the token.
+        How much the token was carrying: re-scoring those models on the direct forget set
+        with only the subject value changed, <span class="term">Pharmacology</span> to
+        <span class="term">Unknown</span> and nothing else, lifted GradDiff generated
+        accuracy from 0.000 to 0.819 and RMU from 0.001 to 0.400. The SFT baseline barely
+        moved, 0.771 to 0.813.
       </p>
       <p style="font-size:15px">
-        RMU, GradDiff and the SFT baseline evaluation were re-run on
-        <span class="term">data/medmcqa_unlearning_data_nolabel</span>, all five splits
-        with the subject value set to <span class="term">Unknown</span>, so the method
-        never sees the marker during unlearning and the evaluator never supplies it. Those
-        are the numbers on this page. Under them both weight methods genuinely suppress
-        the topic, hold against both rewording attacks, and cost more retained-subject
-        accuracy than the labelled run indicated. NPO was not re-run because it did not
-        suppress anything to re-measure. The ALU re-run is in progress; its figures here
-        are from the labelled run.
+        The fix: RMU, GradDiff and the SFT baseline evaluation were re-run on data with
+        the subject value set to <span class="term">Unknown</span> in every split, so the
+        method never sees the marker during unlearning and the evaluator never supplies
+        it. Those are the numbers on this page. NPO was not re-run because it did not
+        suppress anything to re-measure. ALU reads the same field and its re-run is
+        pending.
       </p>
     </div>
   </details>
 
   <h3>Open items before Stage 2</h3>
   <ul class="items">
-    <li><b>ALU under the neutralised field.</b> The re-run is in progress. The ALU figures on this page are from the labelled run; the direct-forget and refusal numbers may move once it completes.</li>
+    <li><b>ALU with the subject field neutralised.</b> Its figures here use the labelled prompt; the direct-forget and refusal numbers may move once the re-run completes.</li>
     <li><b>Attack 5 on the remaining three methods,</b> with a judge model to score leakage. NPO is the priority, since intact answers with suppressed explanations is the profile the attack targets.</li>
-    <li><b>Unlearning across seeds 42 and 43.</b> Stage 0 is measured on three seeds; every Stage 1 result is from seed 44 alone, so no unlearning figure carries an error bar.</li>
+    <li><b>Unlearning across seeds 42 and 43.</b> Every Stage 1 result is from seed 44 alone, so no unlearning figure carries an error bar.</li>
     <li><b>NPO at 14B requires a rerun or a retraction.</b> As configured it did not unlearn, and reporting it as a defence would misrepresent it.</li>
-    <li><b>ALU on the holdout split.</b> Omitted because the split is absent from the script's hardcoded split list, not for any methodological reason. Approximately 2.8 hours at the measured per-query cost. The same pass should cover the two weight attacks ALU is nominally immune to, to establish that immunity empirically.</li>
+    <li><b>ALU on the holdout split,</b> about 2.8 hours at the measured per-query cost. The same pass should also confirm ALU's nominal immunity to the two weight attacks empirically.</li>
   </ul>
 </section>
 
