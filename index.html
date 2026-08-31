@@ -649,23 +649,42 @@
 
 <section class="col">
   <div class="eyebrow">3 &middot; Stage 0 baseline</div>
-  <h2>Baseline and how it is scored</h2>
+  <h2>Baseline measurement</h2>
 
   <p>
-    Every figure in Sections 5 through 8 is compared against the seed-44 SFT model scored
-    in the same regime as the unlearned models, with the subject field set to
-    <span class="term">Unknown</span>: <strong>0.813</strong> forget accuracy generated,
-    <strong>0.429</strong> likelihood, <strong>0.749</strong> retain,
-    <strong>0.893</strong> GSM8K, <strong>0.675</strong> on the holdout split. Scored
-    instead with the label present, the same model reads 0.771 forget generated and
-    0.406 likelihood; the difference is within seed variance, which is the first result:
-    the un-unlearned model does not lean on the label.
+    The baseline was measured directly on seeds 42, 43 and 44, with the subject label
+    present as in training. The last column re-scores the seed-44 model with the subject
+    field set to <span class="term">Unknown</span>, the regime the unlearned models are
+    evaluated in.
   </p>
 
-  <p>
-    Every Stage 1 number is from seed 44 alone. A Stage 0 sweep over seeds 42 to 44 put
-    the seed spread at about seven points on generated accuracy and one point on
-    likelihood scoring, so Stage 1 differences smaller than that should be read as noise.
+  <div class="table-shell">
+    <table>
+      <caption>Table 1. Stage 0 baseline. First three columns scored with the subject label present, n=1500 per split, 300 for GSM8K. Last column is the seed-44 model re-scored with the subject field neutralised.</caption>
+      <thead>
+        <tr><th>Metric</th><th>Seed 42</th><th>Seed 43</th><th>Seed 44</th><th>Spread</th><th>Seed 44,<br>no label</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Forget accuracy (generated)</td><td>0.715</td><td>0.701</td><td>0.771</td><td class="na">0.070</td><td>0.813</td></tr>
+        <tr><td>Retain accuracy (generated)</td><td>0.645</td><td>0.677</td><td>0.703</td><td class="na">0.058</td><td>0.749</td></tr>
+        <tr><td>Paraphrase accuracy (generated)</td><td>0.721</td><td>0.681</td><td>0.757</td><td class="na">0.076</td><td>0.789</td></tr>
+        <tr class="rule-top"><td>Forget accuracy (likelihood)</td><td>0.402</td><td>0.395</td><td>0.406</td><td class="na">0.011</td><td>0.429</td></tr>
+        <tr><td>Retain accuracy (likelihood)</td><td>0.398</td><td>0.410</td><td>0.400</td><td class="na">0.012</td><td>0.420</td></tr>
+        <tr class="rule-top"><td>GSM8K (general utility)</td><td>0.870</td><td>0.870</td><td>0.893</td><td class="na">0.023</td><td>0.893</td></tr>
+        <tr><td>Explanation ROUGE-L</td><td>0.261</td><td>0.272</td><td>0.272</td><td class="na">0.011</td><td>0.262</td></tr>
+        <tr><td>Membership inference AUROC</td><td>0.687</td><td>0.686</td><td>0.687</td><td class="na">0.001</td><td>0.678</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p style="margin-top:26px">
+    Two things follow. First, seed variance is bounded at about seven points on generated
+    accuracy and one point on likelihood scoring; Stage 1 differences smaller than that
+    should be read as noise, and every Stage 1 number is from seed 44 alone. Second,
+    neutralising the subject label moves every baseline metric by less than that seed
+    spread. The un-unlearned model does not lean on the label, so the recovery figures in
+    Sections 5 through 8, all measured with the field neutralised, are compared against
+    the last column: 0.813 forget generated, 0.429 likelihood, 0.749 retain.
   </p>
 
   <p>
