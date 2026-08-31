@@ -649,79 +649,28 @@
 
 <section class="col">
   <div class="eyebrow">3 &middot; Stage 0 baseline</div>
-  <h2>Baseline measurement across three seeds</h2>
+  <h2>Baseline and how it is scored</h2>
 
   <p>
-    The baseline was measured directly on seeds 42, 43 and 44. Scored by free generation
-    on pharmacology questions it lies between <strong>0.70 and 0.77</strong>. Table 1 is
-    the original measurement, with the subject label present.
+    Every figure in Sections 5 through 8 is compared against the seed-44 SFT model scored
+    in the same regime as the unlearned models, with the subject field set to
+    <span class="term">Unknown</span>: <strong>0.813</strong> forget accuracy generated,
+    <strong>0.429</strong> likelihood, <strong>0.749</strong> retain,
+    <strong>0.893</strong> GSM8K, <strong>0.675</strong> on the holdout split. Scored
+    instead with the label present, the same model reads 0.771 forget generated and
+    0.406 likelihood; the difference is within seed variance, which is the first result:
+    the un-unlearned model does not lean on the label.
   </p>
 
   <p>
-    The recovery figures in Sections 5 through 8 are calibrated against a seed-44 baseline
-    re-scored with the subject field neutralised, so that it sits in the same regime as
-    the unlearned models: <strong>0.813</strong> forget accuracy generated,
-    <strong>0.429</strong> likelihood, <strong>0.749</strong> retain, <strong>0.893</strong>
-    GSM8K, <strong>0.675</strong> on the holdout split. Neutralising the label moves the
-    baseline by less than seed variance, which is the first result: the un-unlearned model
-    does not lean on the label.
-  </p>
-
-  <div class="table-shell">
-    <table>
-      <caption>Table 1. Stage 0 baseline across three seeds, subject label present. n=1500 per split, 243 for holdout, 300 for GSM8K.</caption>
-      <thead>
-        <tr><th>Metric</th><th>Seed 42</th><th>Seed 43</th><th>Seed 44</th><th>Spread</th></tr>
-      </thead>
-      <tbody>
-        <tr><td>Forget accuracy (generated)</td><td>0.715</td><td>0.701</td><td>0.771</td><td class="na">0.070</td></tr>
-        <tr><td>Retain accuracy (generated)</td><td>0.645</td><td>0.677</td><td>0.703</td><td class="na">0.058</td></tr>
-        <tr><td>Paraphrase accuracy (generated)</td><td>0.721</td><td>0.681</td><td>0.757</td><td class="na">0.076</td></tr>
-        <tr class="rule-top"><td>Forget accuracy (likelihood)</td><td>0.402</td><td>0.395</td><td>0.406</td><td class="na">0.011</td></tr>
-        <tr><td>Retain accuracy (likelihood)</td><td>0.398</td><td>0.410</td><td>0.400</td><td class="na">0.012</td></tr>
-        <tr class="rule-top"><td>GSM8K (general utility)</td><td>0.870</td><td>0.870</td><td>0.893</td><td class="na">0.023</td></tr>
-        <tr><td>Explanation ROUGE-L</td><td>0.261</td><td>0.272</td><td>0.272</td><td class="na">0.011</td></tr>
-        <tr><td>Membership inference AUROC</td><td>0.687</td><td>0.686</td><td>0.687</td><td class="na">0.001</td></tr>
-      </tbody>
-    </table>
-  </div>
-
-  <div class="plot" style="--lbl:150px">
-    <div class="plot-head"><span>Figure 5. Seed spread per metric</span><span>3 seeds, scale 0 to 1</span></div>
-
-    <div style="display:grid;gap:8px">
-      <div class="dot-row" style="grid-template-columns:var(--lbl) 1fr 54px"><div class="bar-label">Forget, generated</div><div class="dot-track"><div class="rail"></div><div class="span" style="left:70.1%;width:7.0%"></div><div class="pt" style="left:71.5%"></div><div class="pt" style="left:70.1%"></div><div class="pt" style="left:77.1%"></div></div><div class="dot-val">0.070</div></div>
-      <div class="dot-row" style="grid-template-columns:var(--lbl) 1fr 54px"><div class="bar-label">Retain, generated</div><div class="dot-track"><div class="rail"></div><div class="span" style="left:64.5%;width:5.8%"></div><div class="pt" style="left:64.5%"></div><div class="pt" style="left:67.7%"></div><div class="pt" style="left:70.3%"></div></div><div class="dot-val">0.058</div></div>
-      <div class="dot-row" style="grid-template-columns:var(--lbl) 1fr 54px"><div class="bar-label">Paraphrase, generated</div><div class="dot-track"><div class="rail"></div><div class="span" style="left:68.1%;width:7.6%"></div><div class="pt" style="left:72.1%"></div><div class="pt" style="left:68.1%"></div><div class="pt" style="left:75.7%"></div></div><div class="dot-val">0.076</div></div>
-      <div class="dot-row" style="grid-template-columns:var(--lbl) 1fr 54px"><div class="bar-label">Forget, likelihood</div><div class="dot-track"><div class="rail"></div><div class="span" style="left:39.5%;width:1.1%"></div><div class="pt" style="left:40.2%"></div><div class="pt" style="left:39.5%"></div><div class="pt" style="left:40.6%"></div></div><div class="dot-val">0.011</div></div>
-      <div class="dot-row" style="grid-template-columns:var(--lbl) 1fr 54px"><div class="bar-label">Retain, likelihood</div><div class="dot-track"><div class="rail"></div><div class="span" style="left:39.8%;width:1.2%"></div><div class="pt" style="left:39.8%"></div><div class="pt" style="left:41.0%"></div><div class="pt" style="left:40.0%"></div></div><div class="dot-val">0.012</div></div>
-      <div class="dot-row" style="grid-template-columns:var(--lbl) 1fr 54px"><div class="bar-label">GSM8K utility</div><div class="dot-track"><div class="rail"></div><div class="span" style="left:87.0%;width:2.3%"></div><div class="pt" style="left:87.0%"></div><div class="pt" style="left:89.3%"></div></div><div class="dot-val">0.023</div></div>
-      <div class="dot-row" style="grid-template-columns:var(--lbl) 1fr 54px"><div class="bar-label">Explanation ROUGE-L</div><div class="dot-track"><div class="rail"></div><div class="span" style="left:26.1%;width:1.1%"></div><div class="pt" style="left:26.1%"></div><div class="pt" style="left:27.2%"></div></div><div class="dot-val">0.011</div></div>
-      <div class="dot-row" style="grid-template-columns:var(--lbl) 1fr 54px"><div class="bar-label">MIA AUROC</div><div class="dot-track"><div class="rail"></div><div class="span" style="left:68.6%;width:0.1%"></div><div class="pt" style="left:68.6%"></div><div class="pt" style="left:68.7%"></div></div><div class="dot-val">0.001</div></div>
-    </div>
-
-    <div class="axis" style="grid-template-columns:var(--lbl) 1fr 54px">
-      <div></div>
-      <div class="axis-line"><b style="left:0">0</b><b style="left:25%">0.25</b><b style="left:50%">0.50</b><b style="left:75%">0.75</b><b style="left:100%">1.0</b></div>
-      <div></div>
-    </div>
-
-    <div class="plot-note">
-      Each dot is one seed; the bar joins the lowest and highest. The value column gives
-      the spread. Overlapping dots indicate seeds that agree to the plotted precision.
-      Generated metrics vary about six times as much across seeds as likelihood metrics.
-    </div>
-  </div>
-
-  <p style="margin-top:26px">
-    Two observations follow from Table 1. First, seed variance is bounded at
-    approximately seven points on generated accuracy and one point on likelihood
-    scoring. Differences smaller than this cannot be distinguished from noise.
+    Every Stage 1 number is from seed 44 alone. A Stage 0 sweep over seeds 42 to 44 put
+    the seed spread at about seven points on generated accuracy and one point on
+    likelihood scoring, so Stage 1 differences smaller than that should be read as noise.
   </p>
 
   <p>
-    Second, the two scoring methods disagree substantially. They are two different
-    questions asked of the same model.
+    The two scoring methods disagree substantially. They are two different questions asked
+    of the same model.
   </p>
 
   <div class="qpair">
@@ -925,7 +874,7 @@
 
   <div class="table-shell" style="margin-top:30px">
     <table>
-      <caption>Table 2. Post-unlearning evaluation, seed 44. Generated accuracy unless marked otherwise. SFT, RMU and GradDiff scored with the subject field neutralised; NPO and ALU from the prior labelled run. Weight methods on n=1500, ALU on n=500, holdout on n=243.</caption>
+      <caption>Table 1. Post-unlearning evaluation, seed 44. Generated accuracy unless marked otherwise. SFT, RMU and GradDiff scored with the subject field neutralised; NPO and ALU from the prior labelled run. Weight methods on n=1500, ALU on n=500, holdout on n=243.</caption>
       <thead>
         <tr><th>Metric</th><th>SFT</th><th>RMU</th><th>NPO</th><th>GradDiff</th><th>ALU</th></tr>
       </thead>
@@ -945,7 +894,7 @@
   </div>
 
   <div class="plot">
-    <div class="plot-head"><span>Figure 6. Post-unlearning profile, all methods</span><span>scale 0 to 1</span></div>
+    <div class="plot-head"><span>Figure 5. Post-unlearning profile, all methods</span><span>scale 0 to 1</span></div>
 
     <div class="mults">
       <div class="mult">
@@ -997,7 +946,7 @@
   </div>
 
   <div class="plot">
-    <div class="plot-head"><span>Figure 7. Forget-set confidence margin</span><span>scale -2 to 0</span></div>
+    <div class="plot-head"><span>Figure 6. Forget-set confidence margin</span><span>scale -2 to 0</span></div>
 
     <div class="bar-row"><div class="bar-label">SFT</div><div class="div-track"><div class="div-fill flat" style="width:22.8%"></div><div class="div-zero"></div></div><div class="bar-val">-0.457</div></div>
     <div class="bar-row"><div class="bar-label">RMU</div><div class="div-track"><div class="div-fill" style="width:51.3%"></div><div class="div-zero"></div></div><div class="bar-val">-1.026</div></div>
@@ -1334,7 +1283,7 @@
 
   <div class="table-shell">
     <table>
-      <caption>Table 3. Rephrasing attack. The paraphrase set retains all pharmacology vocabulary and alters only phrasing. SFT, RMU and GradDiff with the subject field neutralised; NPO and ALU from the prior labelled run.</caption>
+      <caption>Table 2. Rephrasing attack. The paraphrase set retains all pharmacology vocabulary and alters only phrasing. SFT, RMU and GradDiff with the subject field neutralised; NPO and ALU from the prior labelled run.</caption>
       <thead>
         <tr><th>Method</th><th>Direct forget</th><th>Paraphrased</th><th>Change</th></tr>
       </thead>
@@ -1349,7 +1298,7 @@
   </div>
 
   <div class="plot">
-    <div class="plot-head"><span>Figure 8. Change under rephrasing</span><span>generated, scale 0 to 1</span></div>
+    <div class="plot-head"><span>Figure 7. Change under rephrasing</span><span>generated, scale 0 to 1</span></div>
 
     <div class="dot-row"><div class="bar-label">SFT baseline</div><div class="dot-track"><div class="rail"></div><div class="span" style="left:78.9%;width:2.4%"></div><div class="pt b" style="left:81.3%"></div><div class="pt r" style="left:78.9%"></div></div><div class="dot-val">0.813 <i>to</i> 0.789</div></div>
     <div class="dot-row"><div class="bar-label">RMU</div><div class="dot-track"><div class="rail"></div><div class="span" style="left:0.9%;width:0.6%"></div><div class="pt b" style="left:1.5%"></div><div class="pt r" style="left:0.9%"></div></div><div class="dot-val">0.015 <i>to</i> 0.009</div></div>
@@ -1533,7 +1482,7 @@
       and no judge model has scored any output. NPO is the priority case: it is the one
       method that left the answer intact while reducing explanation ROUGE-L from 0.272 to
       0.011, which is the profile this attack was designed to detect. It is recorded as
-      untested rather than passed in Table 4.
+      untested rather than passed in Table 3.
     </p>
   </div>
 </section>
@@ -1553,7 +1502,7 @@
   </div>
 
   <div class="plot">
-    <div class="plot-head"><span>Figure 9. Forget accuracy after each attack</span><span>generated, scale 0 to 1</span></div>
+    <div class="plot-head"><span>Figure 8. Forget accuracy after each attack</span><span>generated, scale 0 to 1</span></div>
 
     <div class="bar-group">
       <div class="bar-row"><div class="bar-label">RMU unlearned</div><div class="bar-track"><div class="bar-fill flat" style="width:1.5%"></div><div class="bar-ref" style="left:81.3%"></div></div><div class="bar-val">0.015</div></div>
@@ -1601,7 +1550,7 @@
   <div class="table-shell" style="margin-top:30px">
     <table>
       <caption>
-        Table 4. Stage 1 attack map, seed 44, Qwen2.5-14B. RMU and GradDiff with the
+        Table 3. Stage 1 attack map, seed 44, Qwen2.5-14B. RMU and GradDiff with the
         subject field neutralised; ALU from the prior labelled run, its neutralised re-run
         in progress. NPO is marked throughout as an unlearning failure rather than a
         defence: it did not suppress the forget set, so its cells are not comparable.
@@ -1711,7 +1660,7 @@
 
   <div class="table-shell">
     <table>
-      <caption>Table 5. The trade-off observed between the two families.</caption>
+      <caption>Table 4. The trade-off observed between the two families.</caption>
       <thead>
         <tr><th>Property</th><th style="text-align:left">Weight editing</th><th style="text-align:left">Inference filter</th></tr>
       </thead>
