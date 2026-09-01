@@ -520,10 +520,11 @@
   <div class="note">
     <b>Evaluation regime.</b> The prompt includes a <span class="term">Subject:</span>
     line, and on the forget set it names the subject being removed. Since a gradient
-    method can then suppress that one token instead of the topic, the SFT baseline, RMU
-    and GradDiff are evaluated, and RMU and GradDiff unlearned, with the field set to
-    <span class="term">Unknown</span>. NPO and ALU are evaluated with the label present
-    and are marked where they appear. Section 9 explains the correction.
+    method can then suppress that one token instead of the topic, the SFT baseline, RMU,
+    GradDiff and ALU are evaluated, and RMU and GradDiff unlearned, with the field set to
+    <span class="term">Unknown</span>. NPO is evaluated with the label present; the ALU
+    indirect and holdout runs were not repeated after the fix. These are marked where they
+    appear. Section 9 explains the correction.
   </div>
 
   <div class="stats">
@@ -842,13 +843,13 @@
     <div class="chart-title"><span>Forget-set accuracy, generated answers</span><span>n = 1500</span></div>
     <div class="bar-row"><div class="bar-label">SFT baseline</div><div class="bar-track"><div class="bar-fill flat" style="width:81.3%"></div></div><div class="bar-val">0.813</div></div>
     <div class="bar-row"><div class="bar-label">NPO</div><div class="bar-track"><div class="bar-fill" style="width:72.0%"></div></div><div class="bar-val">0.720</div></div>
-    <div class="bar-row"><div class="bar-label">ALU</div><div class="bar-track"><div class="bar-fill" style="width:24.4%"></div></div><div class="bar-val">0.244</div></div>
+    <div class="bar-row"><div class="bar-label">ALU</div><div class="bar-track"><div class="bar-fill" style="width:22.0%"></div></div><div class="bar-val">0.220</div></div>
     <div class="bar-row"><div class="bar-label">RMU</div><div class="bar-track"><div class="bar-fill" style="width:1.5%"></div></div><div class="bar-val">0.015</div></div>
     <div class="bar-row"><div class="bar-label">GradDiff</div><div class="bar-track"><div class="bar-fill" style="width:1.5%"></div></div><div class="bar-val">0.015</div></div>
     <div class="chart-foot">
       <span class="key"><i class="m"></i>baseline, not unlearned</span>
       <span class="key"><i class="b"></i>after unlearning</span>
-      <span>NPO and ALU evaluated with the subject label present; ALU on n = 500</span>
+      <span>NPO evaluated with the subject label present; ALU on n = 500</span>
     </div>
   </div>
 
@@ -887,20 +888,20 @@
 
   <div class="table-shell" style="margin-top:30px">
     <table>
-      <caption>Table 2. Post-unlearning evaluation, seed 44. Generated accuracy unless marked otherwise. SFT, RMU and GradDiff scored with the subject field neutralised; NPO and ALU scored with the subject label present. Weight methods on n=1500, ALU on n=500, holdout on n=243.</caption>
+      <caption>Table 2. Post-unlearning evaluation, seed 44. Generated accuracy unless marked otherwise. SFT, RMU, GradDiff and ALU scored with the subject field neutralised; NPO with the subject label present. Weight methods on n=1500, ALU on n=500, holdout on n=243.</caption>
       <thead>
         <tr><th>Metric</th><th>SFT</th><th>RMU</th><th>NPO</th><th>GradDiff</th><th>ALU</th></tr>
       </thead>
       <tbody>
-        <tr><td>Forget accuracy</td><td>0.813</td><td class="lo">0.015</td><td class="hi">0.720</td><td class="lo">0.015</td><td>0.244</td></tr>
-        <tr><td>Retain accuracy</td><td>0.749</td><td class="hi">0.429</td><td>0.700</td><td class="hi">0.491</td><td>0.730</td></tr>
+        <tr><td>Forget accuracy</td><td>0.813</td><td class="lo">0.015</td><td class="hi">0.720</td><td class="lo">0.015</td><td>0.220</td></tr>
+        <tr><td>Retain accuracy</td><td>0.749</td><td class="hi">0.429</td><td>0.700</td><td class="hi">0.491</td><td>0.728</td></tr>
         <tr><td>Holdout forget accuracy</td><td>0.675</td><td class="lo">0.004</td><td class="hi">0.617</td><td class="lo">0.004</td><td class="na">not run</td></tr>
         <tr class="rule-top"><td>Forget accuracy (likelihood)</td><td>0.429</td><td>0.245</td><td>0.411</td><td>0.272</td><td class="na">n/a</td></tr>
         <tr><td>Forget confidence margin</td><td>-0.457</td><td>-1.026</td><td>-0.604</td><td>-1.414</td><td class="na">n/a</td></tr>
         <tr class="rule-top"><td>GSM8K utility</td><td>0.893</td><td>0.790</td><td>0.880</td><td>0.817</td><td class="na">n/a</td></tr>
         <tr><td>Explanation ROUGE-L</td><td>0.262</td><td>0.007</td><td>0.011</td><td>0.005</td><td class="na">n/a</td></tr>
         <tr><td>Membership inference AUROC</td><td>0.678</td><td>0.462</td><td>0.504</td><td>0.478</td><td class="na">n/a</td></tr>
-        <tr class="rule-top"><td>Refusal rate on forget</td><td class="na">n/a</td><td class="na">n/a</td><td class="na">n/a</td><td class="na">n/a</td><td>0.736</td></tr>
+        <tr class="rule-top"><td>Refusal rate on forget</td><td class="na">n/a</td><td class="na">n/a</td><td class="na">n/a</td><td class="na">n/a</td><td>0.746</td></tr>
         <tr><td>False refusal on retain</td><td class="na">n/a</td><td class="na">n/a</td><td class="na">n/a</td><td class="na">n/a</td><td class="hi">0.110</td></tr>
       </tbody>
     </table>
@@ -916,7 +917,7 @@
         <div class="bar-row"><div class="bar-label">RMU</div><div class="bar-track"><div class="bar-fill" style="width:1.5%"></div></div><div class="bar-val">0.015</div></div>
         <div class="bar-row"><div class="bar-label">NPO</div><div class="bar-track"><div class="bar-fill" style="width:72.0%"></div></div><div class="bar-val">0.720</div></div>
         <div class="bar-row"><div class="bar-label">GradDiff</div><div class="bar-track"><div class="bar-fill" style="width:1.5%"></div></div><div class="bar-val">0.015</div></div>
-        <div class="bar-row"><div class="bar-label">ALU</div><div class="bar-track"><div class="bar-fill" style="width:24.4%"></div></div><div class="bar-val">0.244</div></div>
+        <div class="bar-row"><div class="bar-label">ALU</div><div class="bar-track"><div class="bar-fill" style="width:22.0%"></div></div><div class="bar-val">0.220</div></div>
         <div class="axis"><div></div><div class="axis-line"><b style="left:0">0</b><b style="left:50%">0.50</b><b style="left:100%">1.0</b></div><div></div></div>
       </div>
 
@@ -926,7 +927,7 @@
         <div class="bar-row"><div class="bar-label">RMU</div><div class="bar-track"><div class="bar-fill" style="width:42.9%"></div></div><div class="bar-val">0.429</div></div>
         <div class="bar-row"><div class="bar-label">NPO</div><div class="bar-track"><div class="bar-fill" style="width:70.0%"></div></div><div class="bar-val">0.700</div></div>
         <div class="bar-row"><div class="bar-label">GradDiff</div><div class="bar-track"><div class="bar-fill" style="width:49.1%"></div></div><div class="bar-val">0.491</div></div>
-        <div class="bar-row"><div class="bar-label">ALU</div><div class="bar-track"><div class="bar-fill" style="width:73.0%"></div></div><div class="bar-val">0.730</div></div>
+        <div class="bar-row"><div class="bar-label">ALU</div><div class="bar-track"><div class="bar-fill" style="width:72.8%"></div></div><div class="bar-val">0.728</div></div>
         <div class="axis"><div></div><div class="axis-line"><b style="left:0">0</b><b style="left:50%">0.50</b><b style="left:100%">1.0</b></div><div></div></div>
       </div>
 
@@ -986,10 +987,10 @@
   </p>
 
   <p>
-    ALU behaves differently. It refuses 73.6% of forget questions and answers 24.4% of
-    them correctly, so it leaks as a filter. It preserves retain accuracy at 0.730, close
+    ALU behaves differently. It refuses 74.6% of forget questions and answers 22.0% of
+    them correctly, so it leaks as a filter. It preserves retain accuracy at 0.728, close
     to baseline, at the cost of refusing 11% of retain questions that should have been
-    answered. Its inference cost is 5.7 hours for 500 questions, against 7.8 minutes to
+    answered. Its inference cost is 6.3 hours for 500 questions, against 7.8 minutes to
     train RMU once. It has no holdout figure; that run is pending.
   </p>
 </section>
@@ -1284,7 +1285,7 @@
 
   <div class="table-shell">
     <table>
-      <caption>Table 3. Rephrasing attack. The paraphrase set retains all pharmacology vocabulary and alters only phrasing. SFT, RMU and GradDiff scored with the subject field neutralised; NPO and ALU with the subject label present.</caption>
+      <caption>Table 3. Rephrasing attack. The paraphrase set retains all pharmacology vocabulary and alters only phrasing. SFT, RMU, GradDiff and ALU scored with the subject field neutralised; NPO with the subject label present.</caption>
       <thead>
         <tr><th>Method</th><th>Direct forget</th><th>Paraphrased</th><th>Change</th></tr>
       </thead>
@@ -1293,7 +1294,7 @@
         <tr><td>RMU</td><td>0.015</td><td class="lo">0.009</td><td class="na">-0.006</td></tr>
         <tr><td>GradDiff</td><td>0.015</td><td class="lo">0.020</td><td class="na">+0.005</td></tr>
         <tr><td>NPO</td><td>0.720</td><td>0.722</td><td class="na">+0.002</td></tr>
-        <tr><td>ALU</td><td>0.244</td><td class="lo">0.170</td><td class="lo">-0.074</td></tr>
+        <tr><td>ALU</td><td>0.220</td><td class="lo">0.160</td><td class="lo">-0.060</td></tr>
       </tbody>
     </table>
   </div>
@@ -1305,7 +1306,7 @@
     <div class="dot-row"><div class="bar-label">RMU</div><div class="dot-track"><div class="rail"></div><div class="span" style="left:0.9%;width:0.6%"></div><div class="pt b" style="left:1.5%"></div><div class="pt r" style="left:0.9%"></div></div><div class="dot-val">0.015 <i>to</i> 0.009</div></div>
     <div class="dot-row"><div class="bar-label">GradDiff</div><div class="dot-track"><div class="rail"></div><div class="span" style="left:1.5%;width:0.5%"></div><div class="pt b" style="left:1.5%"></div><div class="pt r" style="left:2.0%"></div></div><div class="dot-val">0.015 <i>to</i> 0.020</div></div>
     <div class="dot-row"><div class="bar-label">NPO</div><div class="dot-track"><div class="rail"></div><div class="span" style="left:72.0%;width:0.2%"></div><div class="pt b" style="left:72.0%"></div><div class="pt r" style="left:72.2%"></div></div><div class="dot-val">0.720 <i>to</i> 0.722</div></div>
-    <div class="dot-row"><div class="bar-label">ALU</div><div class="dot-track"><div class="rail"></div><div class="span" style="left:17.0%;width:7.4%"></div><div class="pt b" style="left:24.4%"></div><div class="pt r" style="left:17.0%"></div></div><div class="dot-val">0.244 <i>to</i> 0.170</div></div>
+    <div class="dot-row"><div class="bar-label">ALU</div><div class="dot-track"><div class="rail"></div><div class="span" style="left:16.0%;width:6.0%"></div><div class="pt b" style="left:22.0%"></div><div class="pt r" style="left:16.0%"></div></div><div class="dot-val">0.220 <i>to</i> 0.160</div></div>
 
     <div class="axis" style="grid-template-columns:112px 1fr 104px">
       <div></div>
@@ -1328,7 +1329,7 @@
 
   <p style="margin-top:26px">
     ALU performs better under rephrasing than under direct questioning. Forget-set
-    accuracy falls from 0.244 to 0.170 and the refusal rate rises from 0.736 to 0.792.
+    accuracy falls from 0.220 to 0.160 and the refusal rate rises from 0.746 to 0.804.
     Either the critic is responding to more than trigger terms, or the paraphrased
     questions present as more identifiably pharmacological than the terse originals. In
     either case the predicted failure did not occur, and the hypothesis that agentic
@@ -1387,7 +1388,7 @@
     </div>
 
     <div class="bar-group">
-      <div class="bar-row"><div class="bar-label">ALU direct</div><div class="bar-track"><div class="bar-fill" style="width:24.4%"></div><div class="bar-ref" style="left:81.3%"></div></div><div class="bar-val">0.244</div></div>
+      <div class="bar-row"><div class="bar-label">ALU direct</div><div class="bar-track"><div class="bar-fill" style="width:22.0%"></div><div class="bar-ref" style="left:81.3%"></div></div><div class="bar-val">0.220</div></div>
       <div class="bar-row"><div class="bar-label">ALU indirect</div><div class="bar-track"><div class="bar-fill held" style="width:17.2%"></div><div class="bar-ref" style="left:81.3%"></div></div><div class="bar-val">0.172</div></div>
     </div>
 
@@ -1401,7 +1402,10 @@
   <p style="margin-top:26px">
     The rewrite recovers nothing. GradDiff scores 0.015 on direct pharmacology questions
     and 0.025 on the same facts asked indirectly. RMU scores 0.015 and 0.016. ALU is at
-    0.172, with a refusal rate of 0.806, the highest across all conditions.
+    0.172, with a refusal rate of 0.806, the highest across all conditions; its indirect
+    run was not repeated after the subject-field fix, so it uses the labelled indirect set,
+    but its direct forget accuracy moved by only two points under the fix, so the verdict
+    is unaffected.
   </p>
 
   <p>
@@ -1500,9 +1504,9 @@
     </div>
 
     <div class="bar-group">
-      <div class="bar-row"><div class="bar-label">ALU filtered</div><div class="bar-track"><div class="bar-fill flat" style="width:24.4%"></div><div class="bar-ref" style="left:81.3%"></div></div><div class="bar-val">0.244</div></div>
+      <div class="bar-row"><div class="bar-label">ALU filtered</div><div class="bar-track"><div class="bar-fill flat" style="width:22.0%"></div><div class="bar-ref" style="left:81.3%"></div></div><div class="bar-val">0.220</div></div>
       <div class="bar-row"><div class="bar-label">1 relearning</div><div class="bar-track"><div class="bar-fill na" style="width:100%"></div><div class="bar-ref" style="left:81.3%"></div></div><div class="bar-val" style="color:var(--muted)">n/a</div></div>
-      <div class="bar-row"><div class="bar-label">3 rephrasing</div><div class="bar-track"><div class="bar-fill held" style="width:17.0%"></div><div class="bar-ref" style="left:81.3%"></div></div><div class="bar-val">0.170</div></div>
+      <div class="bar-row"><div class="bar-label">3 rephrasing</div><div class="bar-track"><div class="bar-fill held" style="width:16.0%"></div><div class="bar-ref" style="left:81.3%"></div></div><div class="bar-val">0.160</div></div>
       <div class="bar-row"><div class="bar-label">4 indirect</div><div class="bar-track"><div class="bar-fill held" style="width:17.2%"></div><div class="bar-ref" style="left:81.3%"></div></div><div class="bar-val">0.172</div></div>
     </div>
 
@@ -1520,7 +1524,8 @@
     </div>
 
     <div class="plot-note">
-      RMU and GradDiff with the subject field neutralised; ALU with the subject label present.
+      RMU, GradDiff and ALU with the subject field neutralised, except the ALU indirect bar,
+      which uses the labelled indirect set.
       Attack 2 is omitted here because it is scored by likelihood rather than generation
       and does not share this axis; it appears in Figure 4 and in the table below. Attack 5
       is omitted because it has been run for RMU only. NPO is omitted because it did not
@@ -1531,9 +1536,9 @@
   <div class="table-shell" style="margin-top:30px">
     <table>
       <caption>
-        Table 4. Stage 1 attack map, seed 44, Qwen2.5-14B. RMU and GradDiff with the
-        subject field neutralised; ALU with the subject label present, its neutralised
-        run pending. NPO is marked throughout as an unlearning failure rather than a
+        Table 4. Stage 1 attack map, seed 44, Qwen2.5-14B. RMU, GradDiff and ALU with the
+        subject field neutralised, except the ALU indirect cell, which uses the labelled
+        indirect set. NPO is marked throughout as an unlearning failure rather than a
         defence: it did not suppress the forget set, so its cells are not comparable.
       </caption>
       <thead>
@@ -1561,7 +1566,7 @@
           <td class="na" style="text-align:left">input</td>
           <td class="vcell"><span class="verdict v-held">HELD 0.009</span></td>
           <td class="vcell"><span class="verdict v-held">HELD 0.020</span></td>
-          <td class="vcell"><span class="verdict v-held">HELD 0.170</span></td>
+          <td class="vcell"><span class="verdict v-held">HELD 0.160</span></td>
           <td class="vcell"><span class="verdict v-na">not unlearned</span></td>
         </tr>
         <tr>
@@ -1585,7 +1590,7 @@
           <td class="na" style="text-align:left">cost</td>
           <td class="hi">0.429</td>
           <td class="hi">0.491</td>
-          <td class="lo">0.730</td>
+          <td class="lo">0.728</td>
           <td>0.700</td>
         </tr>
         <tr>
@@ -1593,7 +1598,7 @@
           <td class="na" style="text-align:left">cost</td>
           <td>7.8 min once</td>
           <td>14.1 min once</td>
-          <td class="hi">41 s per query</td>
+          <td class="hi">45 s per query</td>
           <td>n/a</td>
         </tr>
       </tbody>
@@ -1644,12 +1649,12 @@
         <tr><th>Property</th><th style="text-align:left">Weight editing</th><th style="text-align:left">Inference filter</th></tr>
       </thead>
       <tbody>
-        <tr><td>Direct forget suppression</td><td style="text-align:left" class="lo">near-complete, 0.015</td><td style="text-align:left" class="hi">partial, 0.244</td></tr>
+        <tr><td>Direct forget suppression</td><td style="text-align:left" class="lo">near-complete, 0.015</td><td style="text-align:left" class="hi">partial, 0.220</td></tr>
         <tr><td>Survives relearning</td><td style="text-align:left" class="hi">no</td><td style="text-align:left" class="lo">not applicable</td></tr>
         <tr><td>Survives activation recovery</td><td style="text-align:left" class="hi">no</td><td style="text-align:left" class="lo">not applicable</td></tr>
         <tr><td>Survives indirect phrasing</td><td style="text-align:left" class="lo">yes</td><td style="text-align:left" class="lo">yes</td></tr>
         <tr><td>Cost to retained knowledge</td><td style="text-align:left" class="hi">26 to 32 points</td><td style="text-align:left">11% false refusals</td></tr>
-        <tr><td>Inference cost</td><td style="text-align:left" class="lo">none</td><td style="text-align:left" class="hi">41 s per query</td></tr>
+        <tr><td>Inference cost</td><td style="text-align:left" class="lo">none</td><td style="text-align:left" class="hi">45 s per query</td></tr>
       </tbody>
     </table>
   </div>
@@ -1701,8 +1706,8 @@
             <tr><td>RMU</td><td style="text-align:left">LoRA r=16 alpha=32 restricted to layer 20. Steering coefficient 40.0, retain coefficient 10.0, lr 1e-4, 300 steps, batch 4+4. 7.8 min.</td></tr>
             <tr><td>NPO</td><td style="text-align:left">LoRA r=16 alpha=32 on layers 0, 4, 8 through 36. Beta 0.5, retain coefficient 2.0, lr 1e-4, 300 steps, batch 2+2, early stop ratio -5.0.</td></tr>
             <tr><td>GradDiff</td><td style="text-align:left">LoRA r=16 alpha=32, no layer restriction. Forget and retain coefficients both 1.0, lr 5e-5, 400 steps, batch 2+2. No bounding term by design, so the forget loss reaches 222. 14.1 min.</td></tr>
-            <tr><td>Subject field</td><td style="text-align:left">RMU, GradDiff and the SFT baseline eval use <span class="term">data/medmcqa_unlearning_data_nolabel</span>, every split with the <span class="term">Subject:</span> value rewritten to <span class="term">Unknown</span>. NPO and ALU use the labelled splits. See "Subject label in the prompt" below.</td></tr>
-            <tr><td>ALU</td><td style="text-align:left">Knowledge model is the unmodified SFT baseline. Orchestrator Qwen2.5-14B-Instruct, critic Qwen2.5-32B-Instruct. 5 rewrite variants, top 2 synthesised, refusal below critic score 4.0, max 160 new tokens. 5.7 h for 500 questions.</td></tr>
+            <tr><td>Subject field</td><td style="text-align:left">RMU, GradDiff, the SFT baseline eval and the ALU main run use <span class="term">data/medmcqa_unlearning_data_nolabel</span>, every split with the <span class="term">Subject:</span> value rewritten to <span class="term">Unknown</span>. NPO, and the ALU indirect and holdout runs, use the labelled splits. See "Subject label in the prompt" below.</td></tr>
+            <tr><td>ALU</td><td style="text-align:left">Knowledge model is the unmodified SFT baseline. Orchestrator Qwen2.5-14B-Instruct, critic Qwen2.5-32B-Instruct. 5 rewrite variants, top 2 synthesised, refusal below critic score 4.0, max 160 new tokens. 6.3 h for 500 questions.</td></tr>
             <tr><td>Relearning attack</td><td style="text-align:left">30 forget items drawn from beyond the evaluator's scored index range, 10 epochs. 101 to 108 s of training per method.</td></tr>
             <tr><td>Activation recovery</td><td style="text-align:left">Forward hooks capture SFT hidden states and overwrite those of the unlearned model at layer 20, and separately at layers 0, 4, 8 through 36. Teacher-forced single-pass scoring. 7.5 min per method, no training.</td></tr>
             <tr><td>Indirect set</td><td style="text-align:left">Same 1,500-row forget sample as the paraphrase set, rewritten to clinical vignettes with a two-pass self-check for leakage, answerability and option-type match. 196 dropped, 1,304 retained, 1,283 scored.</td></tr>
@@ -1744,9 +1749,9 @@
       <p style="font-size:15px">
         Regeneration was not required, since the raw per-item text had been checkpointed.
         Rescoring by gold option-text substring match, following the convention used by
-        the main evaluator, gives 0.244 forget, 0.730 retain and 0.170 paraphrase. The
-        near-zero retain accuracy was the indicator: a filter that refuses 11% of retain
-        questions cannot score 0.002 on the remainder.
+        the main evaluator, recovers the real numbers. The near-zero retain accuracy was
+        the indicator: a filter that refuses 11% of retain questions cannot score 0.002 on
+        the remainder.
       </p>
     </div>
   </details>
@@ -1775,20 +1780,21 @@
         The fix: RMU, GradDiff and the SFT baseline evaluation were re-run on data with
         the subject value set to <span class="term">Unknown</span> in every split, so the
         method never sees the marker during unlearning and the evaluator never supplies
-        it. Those are the numbers on this page. NPO was not re-run because it did not
-        suppress anything to re-measure. ALU reads the same field and its re-run is
-        pending.
+        it. Those are the numbers on this page. ALU was re-run the same way and barely
+        moved, forget 0.244 to 0.220 and retain 0.730 to 0.728, since its critic reads the
+        question content and not the subject line; its indirect and holdout runs were not
+        repeated. NPO was not re-run because it did not suppress anything to re-measure.
       </p>
     </div>
   </details>
 
   <h3>Open items before Stage 2</h3>
   <ul class="items">
-    <li><b>ALU with the subject field neutralised.</b> Its figures here use the labelled prompt; the direct-forget and refusal numbers may move once the re-run completes.</li>
+    <li><b>ALU indirect and holdout under the neutralised field.</b> ALU's main evaluation and rephrasing were re-run; the indirect attack and the holdout split were not, though its two-point shift on direct forget accuracy suggests neither verdict would change.</li>
     <li><b>Attack 5 on the remaining three methods,</b> with a judge model to score leakage. NPO is the priority, since intact answers with suppressed explanations is the profile the attack targets.</li>
     <li><b>Unlearning across seeds 42 and 43.</b> Every Stage 1 result is from seed 44 alone, so no unlearning figure carries an error bar.</li>
     <li><b>NPO at 14B requires a rerun or a retraction.</b> As configured it did not unlearn, and reporting it as a defence would misrepresent it.</li>
-    <li><b>ALU on the holdout split,</b> about 2.8 hours at the measured per-query cost. The same pass should also confirm ALU's nominal immunity to the two weight attacks empirically.</li>
+    <li><b>ALU on the holdout split,</b> about 3 hours at the measured per-query cost. The same pass should also confirm ALU's nominal immunity to the two weight attacks empirically.</li>
   </ul>
 </section>
 
