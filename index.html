@@ -1798,14 +1798,160 @@
   </ul>
 </section>
 
+<!-- ============================ 10. STAGE 2 ============================ -->
+
+<section class="col">
+  <div class="eyebrow">10 &middot; Stage 2, first result</div>
+  <h2>Feasibility: reading the topic from activations</h2>
+
+  <p>
+    Stage 2 builds a gate that reads the model's internal representation of a question
+    and blocks before generation, rather than filtering on the output text. The first
+    question is whether that representation is even there to read: a simple classifier
+    on the unmodified SFT baseline's activations, predicting whether a question is about
+    pharmacology, trained on 1,000 forget and 1,000 retain questions from the neutralised
+    splits, one logistic regression per layer on the last prompt token's hidden state
+    before generation begins.
+  </p>
+
+  <div class="chart">
+    <div class="chart-title"><span>Held-out accuracy, forget vs. retain, by layer</span><span>logistic regression, n = 2,000</span></div>
+    <div class="bar-row"><div class="bar-label">layer 0</div><div class="bar-track"><div class="bar-fill flat" style="width:50.0%"></div></div><div class="bar-val">0.500</div></div>
+    <div class="bar-row"><div class="bar-label">layer 4</div><div class="bar-track"><div class="bar-fill" style="width:83.8%"></div></div><div class="bar-val">0.838</div></div>
+    <div class="bar-row"><div class="bar-label">layer 8</div><div class="bar-track"><div class="bar-fill" style="width:90.5%"></div></div><div class="bar-val">0.905</div></div>
+    <div class="bar-row"><div class="bar-label">layer 12</div><div class="bar-track"><div class="bar-fill" style="width:92.7%"></div></div><div class="bar-val">0.927</div></div>
+    <div class="bar-row"><div class="bar-label">layer 16</div><div class="bar-track"><div class="bar-fill" style="width:92.0%"></div></div><div class="bar-val">0.920</div></div>
+    <div class="bar-row"><div class="bar-label">layer 20</div><div class="bar-track"><div class="bar-fill" style="width:92.0%"></div></div><div class="bar-val">0.920</div></div>
+    <div class="bar-row"><div class="bar-label">layer 24</div><div class="bar-track"><div class="bar-fill" style="width:91.0%"></div></div><div class="bar-val">0.910</div></div>
+    <div class="bar-row"><div class="bar-label">layer 28</div><div class="bar-track"><div class="bar-fill" style="width:92.5%"></div></div><div class="bar-val">0.925</div></div>
+    <div class="bar-row"><div class="bar-label">layer 32</div><div class="bar-track"><div class="bar-fill" style="width:91.2%"></div></div><div class="bar-val">0.912</div></div>
+    <div class="bar-row"><div class="bar-label">layer 36</div><div class="bar-track"><div class="bar-fill" style="width:92.2%"></div></div><div class="bar-val">0.922</div></div>
+    <div class="chart-foot">
+      <span class="key"><i class="m"></i>layer 0, raw embeddings, chance</span>
+      <span class="key"><i class="b"></i>held-out accuracy</span>
+    </div>
+  </div>
+
+  <p style="margin-top:26px">
+    Layer 0 sits at exactly chance, 0.500, which is the expected floor: a raw token
+    embedding carries no contextual information about the question yet. From layer 8
+    onward the topic is cleanly separable, 0.91 to 0.93 accuracy, AUC around 0.97.
+    Recall on paraphrased and indirectly-phrased forget questions, held out of training
+    entirely, stays at 0.85 to 0.90 across the same range rather than collapsing, so the
+    signal survives rewording and is not just a vocabulary match.
+  </p>
+
+  <h3>Format independence</h3>
+  <p>
+    A gate is only useful if it fires the same whether the question is posed as a
+    multiple-choice item or as an open request for an explanation, since an attacker can
+    route around a suppressed answer by asking for reasoning directly instead. Each
+    classifier above was fit only on the multiple-choice prompt. To test whether that
+    same, unmodified classifier still separates the classes when the options list and
+    the answer scaffold are removed, it was evaluated, with no retraining, on 500 fresh
+    forget and 500 fresh retain questions rewritten into open, option-free prompts.
+  </p>
+
+  <div class="chart">
+    <div class="chart-title"><span>Held-out accuracy, multiple-choice vs. open-format prompt</span><span>same classifier, n = 1,000</span></div>
+
+    <div class="bar-group">
+      <div class="bar-row"><div class="bar-label">layer 4</div><div class="bar-track"><div class="bar-fill" style="width:83.8%"></div></div><div class="bar-val">0.838</div></div>
+      <div class="bar-row"><div class="bar-label">open format</div><div class="bar-track"><div class="bar-fill after" style="width:50.6%"></div></div><div class="bar-val">0.506</div></div>
+    </div>
+
+    <div class="bar-group">
+      <div class="bar-row"><div class="bar-label">layer 16</div><div class="bar-track"><div class="bar-fill" style="width:92.0%"></div></div><div class="bar-val">0.920</div></div>
+      <div class="bar-row"><div class="bar-label">open format</div><div class="bar-track"><div class="bar-fill held" style="width:86.9%"></div></div><div class="bar-val">0.869</div></div>
+    </div>
+
+    <div class="bar-group">
+      <div class="bar-row"><div class="bar-label">layer 20</div><div class="bar-track"><div class="bar-fill" style="width:92.0%"></div></div><div class="bar-val">0.920</div></div>
+      <div class="bar-row"><div class="bar-label">open format</div><div class="bar-track"><div class="bar-fill held" style="width:84.9%"></div></div><div class="bar-val">0.849</div></div>
+    </div>
+
+    <div class="chart-foot">
+      <span class="key"><i class="b"></i>multiple-choice prompt</span>
+      <span class="key"><i class="r"></i>open-format prompt, same classifier</span>
+    </div>
+  </div>
+
+  <p style="margin-top:26px">
+    The transfer is not uniform across depth, and the cutoff is sharp. At layers 4
+    through 12, accuracy on the open-format prompt collapses to 0.50 to 0.52, chance,
+    even though the same layers scored 0.84 to 0.93 in distribution. Ranking quality
+    (AUC) only falls to 0.78 to 0.84 there rather than to chance, so the ordering
+    information survives; what breaks is the decision boundary, fit on multiple-choice
+    activations whose scale shifts once the prompt no longer ends on the same token. From
+    layer 16 on, accuracy holds at 0.82 to 0.87, a real drop from the in-distribution
+    figure but well above chance. The likely reason is that shallow layers are still
+    driven by the identity of the last token, which differs between the two prompt
+    templates, while deeper layers have settled into a representation closer to what the
+    question is about.
+  </p>
+
+  <div class="note">
+    <b>Reading this result.</b> Feasibility is confirmed from roughly layer 16 onward:
+    the topic is present in the activations and legible across both rewording and answer
+    format there. It is not confirmed at shallow layers, despite their in-distribution
+    accuracy looking equally strong, which is exactly the failure mode this check was
+    run to catch. Layer 16 is the current working choice for the gate, with layer 20
+    close behind. These numbers are a single 80/20 split, not cross-validated, so treat
+    differences of a point or two between neighbouring layers as noise.
+  </div>
+
+  <details>
+    <summary>Full layer sweep, all figures</summary>
+    <div class="body">
+      <div class="table-shell" style="border:none">
+        <table>
+          <caption>Table 6. Feasibility classifier, all cached layers, seed 44.</caption>
+          <thead>
+            <tr><th>Layer</th><th>Val. accuracy</th><th>Val. AUC</th><th>Paraphrase recall</th><th>Indirect recall</th><th>Open-format accuracy</th><th>Open-format AUC</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>0</td><td>0.500</td><td>0.500</td><td>0.000</td><td>0.000</td><td>0.500</td><td>0.500</td></tr>
+            <tr><td>4</td><td>0.838</td><td>0.914</td><td>0.808</td><td>0.874</td><td>0.506</td><td>0.780</td></tr>
+            <tr><td>8</td><td>0.905</td><td>0.960</td><td>0.886</td><td>0.848</td><td>0.500</td><td>0.842</td></tr>
+            <tr><td>12</td><td>0.927</td><td>0.969</td><td>0.892</td><td>0.886</td><td>0.516</td><td>0.838</td></tr>
+            <tr><td>16</td><td>0.920</td><td>0.968</td><td>0.880</td><td>0.888</td><td>0.869</td><td>0.933</td></tr>
+            <tr><td>20</td><td>0.920</td><td>0.972</td><td>0.900</td><td>0.878</td><td>0.849</td><td>0.930</td></tr>
+            <tr><td>24</td><td>0.910</td><td>0.971</td><td>0.900</td><td>0.902</td><td>0.860</td><td>0.928</td></tr>
+            <tr><td>28</td><td>0.925</td><td>0.970</td><td>0.882</td><td>0.880</td><td>0.827</td><td>0.900</td></tr>
+            <tr><td>32</td><td>0.912</td><td>0.970</td><td>0.852</td><td>0.858</td><td>0.848</td><td>0.931</td></tr>
+            <tr><td>36</td><td>0.922</td><td>0.970</td><td>0.850</td><td>0.840</td><td>0.824</td><td>0.934</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="margin-top:16px;font-size:14px">
+        Probe: <span class="term">src/unlearning/gate/MT_train_gate_probe.py</span>,
+        <span class="term">MT_eval_gate_format_transfer.py</span>. Activations:
+        <span class="term">src/unlearning/gate/MT_extract_gate_activations.py</span>,
+        run against <span class="term">models/MT-s0-14b-expl-sft-seed44-v1</span> on
+        <span class="term">data/medmcqa_unlearning_data_nolabel</span>. StandardScaler
+        fit on the training split only, logistic regression, stratified 80/20 split,
+        seed 44.
+      </p>
+    </div>
+  </details>
+
+  <h3>Next</h3>
+  <ul class="items">
+    <li><b>Wire the classifier into an actual gate</b> that withholds generation when it fires, rather than just scoring held-out accuracy.</li>
+    <li><b>Run the gate through the Stage 1 attack map</b> to confirm it closes the holes rephrasing and indirect questions left open, while keeping the relearning immunity that comes from never touching the weights.</li>
+    <li><b>Cross-validate the layer choice</b> rather than relying on a single 80/20 split, before finalising layer 16 over layer 20.</li>
+  </ul>
+</section>
+
 </main>
 
 <footer class="col">
   <p>
     Stage 1 of a six-month thesis on robust LLM unlearning across the weight and
     inference-time divide. Stage 2 builds a gate that reads the model's internal
-    representation of a question and blocks before generation. Stage 3 tests it
-    adversarially.
+    representation of a question and blocks before generation; a first feasibility
+    check now confirms that representation is legible from around layer 16 on, across
+    both rewording and answer format. Stage 3 tests the gate adversarially.
   </p>
 </footer>
 
