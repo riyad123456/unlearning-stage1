@@ -217,6 +217,11 @@
   .key i.r { background: var(--rust); }
   .key i.m { background: var(--muted); }
   .key i.d { width: 0; height: 12px; border-left: 1px dashed var(--muted); border-radius: 0; }
+  .bar-fill.gate { background: #285497; }
+  .bar-fill.alu  { background: #66c093; }
+  .key i.g  { background: #285497; }
+  .key i.a  { background: #66c093; }
+  .key i.am { background: #c18000; }
 
   /* ---------- tables ---------- */
 
@@ -465,8 +470,8 @@
 
   <div class="kicker">
     <span>Master's thesis</span><i class="dot"></i>
-    <span>Stage 1 of 4</span><i class="dot"></i>
-    <span>August 2026</span>
+    <span>Stages 1 and 2 of 4</span><i class="dot"></i>
+    <span>October 2026</span>
   </div>
 
   <h1>Unlearning Under Attack</h1>
@@ -478,7 +483,12 @@
     against them, the two weight-side ones, relearning and activation patching, recovered
     the knowledge to near the pre-unlearning baseline; the two rewording attacks did not.
     The weight methods pay for this with a large drop in accuracy on the subjects that
-    were meant to be preserved.
+    were meant to be preserved. Stage 2 replaces both with a gate: a linear probe that
+    reads the unmodified model's activations and withholds the response before
+    generation. On 4,765 newly written questions it blocks 83% of pharmacology questions
+    and 7.8% of other subjects, and rewording lets 10 to 18% of blocked questions
+    through. At the same false-block rate, ALU's detection stage blocks 55% and leaks
+    more.
   </p>
 
   <div class="authors">
@@ -1788,6 +1798,22 @@
     </div>
   </details>
 
+  <details>
+    <summary>ALU verdict parser</summary>
+    <div class="body">
+      <p style="font-size:15px">
+        ALU's auditor answers LEAK or NONE and then begins an explanation. The Stage 1
+        implementation counted any output containing the letters LEAK, so a verdict such
+        as "NONE. The response does not leak any..." was counted as a leak. On the Stage 1
+        data this flagged 33.8% of retain answers instead of 3.6%, and 79.8% of forget
+        answers instead of 69.6%. Wrongly flagged answers went on to rewriting and could
+        end in refusal, so the Stage 1 ALU figures overstate its refusals, the 11%
+        false-refusal rate included. The parser is fixed and ALU is being re-run; the
+        Stage 2 comparison in Section 12 uses the fixed parser.
+      </p>
+    </div>
+  </details>
+
   <h3>Open items before Stage 2</h3>
   <ul class="items">
     <li><b>ALU indirect and holdout under the neutralised field.</b> ALU's main evaluation and rephrasing were re-run; the indirect attack and the holdout split were not, though its two-point shift on direct forget accuracy suggests neither verdict would change.</li>
@@ -1798,148 +1824,181 @@
   </ul>
 </section>
 
-<!-- ============================ 10. STAGE 2 ============================ -->
+<!-- ============================ 10. STAGE 2: THE GATE ============================ -->
 
 <section class="col">
-  <div class="eyebrow">10 &middot; Stage 2, first result</div>
-  <h2>Feasibility: reading the topic from activations</h2>
+  <div class="eyebrow">10 &middot; Stage 2</div>
+  <h2>The activation probe gate</h2>
 
   <p>
-    Stage 2 builds a gate that reads the model's internal representation of a question
-    and blocks before generation, rather than filtering on the output text. The first
-    question is whether that representation is even there to read: a simple classifier
-    on the unmodified SFT baseline's activations, predicting whether a question is about
-    pharmacology, trained on 1,000 forget and 1,000 retain questions from the neutralised
-    splits, one logistic regression per layer on the last prompt token's hidden state
-    before generation begins.
+    Section 8 set out the case for a gate in front of the unmodified model. Stage 2 builds
+    it. The SFT baseline runs its usual forward pass over the question, and before any
+    token is generated a logistic regression reads the hidden state of the last prompt
+    token at layer 20 and scores whether the question is about pharmacology. Above a
+    threshold the model returns a fixed refusal and generates nothing. The added cost is
+    one dot product per question, against ALU's chain of three models.
   </p>
 
-  <div class="chart">
-    <div class="chart-title"><span>Held-out accuracy, forget vs. retain, by layer</span><span>logistic regression, n = 2,000</span></div>
-    <div class="bar-row"><div class="bar-label">layer 0</div><div class="bar-track"><div class="bar-fill flat" style="width:50.0%"></div></div><div class="bar-val">0.500</div></div>
-    <div class="bar-row"><div class="bar-label">layer 4</div><div class="bar-track"><div class="bar-fill" style="width:83.8%"></div></div><div class="bar-val">0.838</div></div>
-    <div class="bar-row"><div class="bar-label">layer 8</div><div class="bar-track"><div class="bar-fill" style="width:90.5%"></div></div><div class="bar-val">0.905</div></div>
-    <div class="bar-row"><div class="bar-label">layer 12</div><div class="bar-track"><div class="bar-fill" style="width:92.7%"></div></div><div class="bar-val">0.927</div></div>
-    <div class="bar-row"><div class="bar-label">layer 16</div><div class="bar-track"><div class="bar-fill" style="width:92.0%"></div></div><div class="bar-val">0.920</div></div>
-    <div class="bar-row"><div class="bar-label">layer 20</div><div class="bar-track"><div class="bar-fill" style="width:92.0%"></div></div><div class="bar-val">0.920</div></div>
-    <div class="bar-row"><div class="bar-label">layer 24</div><div class="bar-track"><div class="bar-fill" style="width:91.0%"></div></div><div class="bar-val">0.910</div></div>
-    <div class="bar-row"><div class="bar-label">layer 28</div><div class="bar-track"><div class="bar-fill" style="width:92.5%"></div></div><div class="bar-val">0.925</div></div>
-    <div class="bar-row"><div class="bar-label">layer 32</div><div class="bar-track"><div class="bar-fill" style="width:91.2%"></div></div><div class="bar-val">0.912</div></div>
-    <div class="bar-row"><div class="bar-label">layer 36</div><div class="bar-track"><div class="bar-fill" style="width:92.2%"></div></div><div class="bar-val">0.922</div></div>
+  <p>
+    The probe was trained on 13,758 forget and 13,758 retain questions from the
+    neutralised splits, with 20% held out.
+  </p>
+
+  <div class="plot">
+    <div class="plot-head"><span>Figure 9. Probe accuracy and recall on reworded questions, by layer</span><span>scale 0 to 1</span></div>
+    <div style="overflow-x:auto"><svg viewBox="0 0 646 290" role="img" aria-label="Probe accuracy and recall on reworded questions by layer" style="display:block;width:100%;min-width:560px;height:auto"><line x1="40" y1="242.0" x2="580" y2="242.0" stroke="#E4EAED" stroke-width="1"/><text x="32.0" y="246.0" font-family="Google Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" fill="#5E6C74" text-anchor="end">0</text><line x1="40" y1="187.0" x2="580" y2="187.0" stroke="#E4EAED" stroke-width="1"/><text x="32.0" y="191.0" font-family="Google Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" fill="#5E6C74" text-anchor="end">0.25</text><line x1="40" y1="132.0" x2="580" y2="132.0" stroke="#E4EAED" stroke-width="1"/><text x="32.0" y="136.0" font-family="Google Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" fill="#5E6C74" text-anchor="end">0.5</text><line x1="40" y1="77.0" x2="580" y2="77.0" stroke="#E4EAED" stroke-width="1"/><text x="32.0" y="81.0" font-family="Google Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" fill="#5E6C74" text-anchor="end">0.75</text><line x1="40" y1="22.0" x2="580" y2="22.0" stroke="#E4EAED" stroke-width="1"/><text x="32.0" y="26.0" font-family="Google Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" fill="#5E6C74" text-anchor="end">1</text><line x1="340.0" y1="16" x2="340.0" y2="242" stroke="#5E6C74" stroke-width="1"/><text x="340.0" y="12.0" font-family="Google Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" fill="#5E6C74" text-anchor="middle">gate layer</text><polyline points="40.0,132.0 100.0,50.2 160.0,41.4 220.0,39.2 280.0,38.3 340.0,38.1 400.0,37.8 460.0,41.1 520.0,40.0 580.0,40.0" fill="none" stroke="#285497" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="40.0" cy="132.0" r="4" fill="#285497" stroke="#FFFFFF" stroke-width="2"/><circle cx="100.0" cy="50.2" r="4" fill="#285497" stroke="#FFFFFF" stroke-width="2"/><circle cx="160.0" cy="41.4" r="4" fill="#285497" stroke="#FFFFFF" stroke-width="2"/><circle cx="220.0" cy="39.2" r="4" fill="#285497" stroke="#FFFFFF" stroke-width="2"/><circle cx="280.0" cy="38.3" r="4" fill="#285497" stroke="#FFFFFF" stroke-width="2"/><circle cx="340.0" cy="38.1" r="4" fill="#285497" stroke="#FFFFFF" stroke-width="2"/><circle cx="400.0" cy="37.8" r="4" fill="#285497" stroke="#FFFFFF" stroke-width="2"/><circle cx="460.0" cy="41.1" r="4" fill="#285497" stroke="#FFFFFF" stroke-width="2"/><circle cx="520.0" cy="40.0" r="4" fill="#285497" stroke="#FFFFFF" stroke-width="2"/><circle cx="580.0" cy="40.0" r="4" fill="#285497" stroke="#FFFFFF" stroke-width="2"/><polyline points="40.0,242.0 100.0,64.7 160.0,57.0 220.0,42.9 280.0,45.5 340.0,40.9 400.0,46.9 460.0,45.8 520.0,42.9 580.0,43.3" fill="none" stroke="#c18000" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="40.0" cy="242.0" r="4" fill="#c18000" stroke="#FFFFFF" stroke-width="2"/><circle cx="100.0" cy="64.7" r="4" fill="#c18000" stroke="#FFFFFF" stroke-width="2"/><circle cx="160.0" cy="57.0" r="4" fill="#c18000" stroke="#FFFFFF" stroke-width="2"/><circle cx="220.0" cy="42.9" r="4" fill="#c18000" stroke="#FFFFFF" stroke-width="2"/><circle cx="280.0" cy="45.5" r="4" fill="#c18000" stroke="#FFFFFF" stroke-width="2"/><circle cx="340.0" cy="40.9" r="4" fill="#c18000" stroke="#FFFFFF" stroke-width="2"/><circle cx="400.0" cy="46.9" r="4" fill="#c18000" stroke="#FFFFFF" stroke-width="2"/><circle cx="460.0" cy="45.8" r="4" fill="#c18000" stroke="#FFFFFF" stroke-width="2"/><circle cx="520.0" cy="42.9" r="4" fill="#c18000" stroke="#FFFFFF" stroke-width="2"/><circle cx="580.0" cy="43.3" r="4" fill="#c18000" stroke="#FFFFFF" stroke-width="2"/><polyline points="40.0,242.0 100.0,68.4 160.0,64.2 220.0,54.3 280.0,53.2 340.0,53.5 400.0,56.1 460.0,52.6 520.0,56.1 580.0,48.8" fill="none" stroke="#A8452B" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="40.0" cy="242.0" r="4" fill="#A8452B" stroke="#FFFFFF" stroke-width="2"/><circle cx="100.0" cy="68.4" r="4" fill="#A8452B" stroke="#FFFFFF" stroke-width="2"/><circle cx="160.0" cy="64.2" r="4" fill="#A8452B" stroke="#FFFFFF" stroke-width="2"/><circle cx="220.0" cy="54.3" r="4" fill="#A8452B" stroke="#FFFFFF" stroke-width="2"/><circle cx="280.0" cy="53.2" r="4" fill="#A8452B" stroke="#FFFFFF" stroke-width="2"/><circle cx="340.0" cy="53.5" r="4" fill="#A8452B" stroke="#FFFFFF" stroke-width="2"/><circle cx="400.0" cy="56.1" r="4" fill="#A8452B" stroke="#FFFFFF" stroke-width="2"/><circle cx="460.0" cy="52.6" r="4" fill="#A8452B" stroke="#FFFFFF" stroke-width="2"/><circle cx="520.0" cy="56.1" r="4" fill="#A8452B" stroke="#FFFFFF" stroke-width="2"/><circle cx="580.0" cy="48.8" r="4" fill="#A8452B" stroke="#FFFFFF" stroke-width="2"/><text x="590.0" y="44.0" font-family="Google Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" fill="#35454F" text-anchor="start">0.918</text><text x="590.0" y="58.0" font-family="Google Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" fill="#35454F" text-anchor="start">0.903</text><text x="590.0" y="72.0" font-family="Google Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" fill="#35454F" text-anchor="start">0.878</text><text x="40.0" y="260.0" font-family="Google Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" fill="#5E6C74" text-anchor="middle">0</text><text x="100.0" y="260.0" font-family="Google Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" fill="#5E6C74" text-anchor="middle">4</text><text x="160.0" y="260.0" font-family="Google Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" fill="#5E6C74" text-anchor="middle">8</text><text x="220.0" y="260.0" font-family="Google Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" fill="#5E6C74" text-anchor="middle">12</text><text x="280.0" y="260.0" font-family="Google Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" fill="#5E6C74" text-anchor="middle">16</text><text x="340.0" y="260.0" font-family="Google Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" fill="#5E6C74" text-anchor="middle">20</text><text x="400.0" y="260.0" font-family="Google Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" fill="#5E6C74" text-anchor="middle">24</text><text x="460.0" y="260.0" font-family="Google Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" fill="#5E6C74" text-anchor="middle">28</text><text x="520.0" y="260.0" font-family="Google Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" fill="#5E6C74" text-anchor="middle">32</text><text x="580.0" y="260.0" font-family="Google Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" fill="#5E6C74" text-anchor="middle">36</text><text x="310.0" y="280.0" font-family="Google Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.5" fill="#35454F" text-anchor="middle">Layer</text></svg></div>
     <div class="chart-foot">
-      <span class="key"><i class="m"></i>layer 0, raw embeddings, chance</span>
-      <span class="key"><i class="b"></i>held-out accuracy</span>
+      <span class="key"><i class="g"></i>held-out accuracy</span>
+      <span class="key"><i class="am"></i>recall, paraphrased</span>
+      <span class="key"><i class="r"></i>recall, indirect</span>
     </div>
   </div>
 
   <p style="margin-top:26px">
-    Layer 0 sits at exactly chance, 0.500, which is the expected floor: a raw token
-    embedding carries no contextual information about the question yet. From layer 8
-    onward the topic is cleanly separable, 0.91 to 0.93 accuracy, AUC around 0.97.
-    Recall on paraphrased and indirectly-phrased forget questions, held out of training
-    entirely, stays at 0.85 to 0.90 across the same range rather than collapsing, so the
-    signal survives rewording and is not just a vocabulary match.
+    Layer 0, the raw token embedding, sits at chance. From layer 8 onward the topic
+    separates at 0.91 to 0.93 held-out accuracy, and the probe still recognises 84 to 91%
+    of the paraphrased and indirect questions, which it never saw. Layer 20 is among the
+    best on every measure (accuracy 0.927, AUC 0.967) and is the layer Attack 2 patched,
+    so the gate reads it.
   </p>
 
-  <h3>Format independence</h3>
+  <h3>Answer format has to be trained in</h3>
   <p>
-    A gate is only useful if it fires the same whether the question is posed as a
-    multiple-choice item or as an open request for an explanation, since an attacker can
-    route around a suppressed answer by asking for reasoning directly instead. Each
-    classifier above was fit only on the multiple-choice prompt. To test whether that
-    same, unmodified classifier still separates the classes when the options list and
-    the answer scaffold are removed, it was evaluated, with no retraining, on 500 fresh
-    forget and 500 fresh retain questions rewritten into open, option-free prompts.
+    Attack 5 showed that suppressing the multiple-choice answer does not keep the
+    knowledge out of an explanation. A gate avoids this by deciding before generation,
+    but only if it fires however the question is posed. Tested on the 243 holdout
+    questions, each also posed as an open question with no options, a probe trained on
+    multiple-choice prompts alone missed more than half of the open-format pharmacology
+    questions. Its AUC on them stayed at 0.86: the topic was still readable, but the
+    threshold had been fitted to the multiple-choice prompt. Training on both renderings
+    of the same questions closed the gap, and the gate uses that classifier.
   </p>
 
-  <div class="chart">
-    <div class="chart-title"><span>Held-out accuracy, multiple-choice vs. open-format prompt</span><span>same classifier, n = 1,000</span></div>
-
-    <div class="bar-group">
-      <div class="bar-row"><div class="bar-label">layer 4</div><div class="bar-track"><div class="bar-fill" style="width:83.8%"></div></div><div class="bar-val">0.838</div></div>
-      <div class="bar-row"><div class="bar-label">open format</div><div class="bar-track"><div class="bar-fill after" style="width:50.6%"></div></div><div class="bar-val">0.506</div></div>
+  <div class="plot">
+    <div class="plot-head"><span>Figure 10. Recall by prompt format</span><span>243 unseen questions &middot; layer 20</span></div>
+    <div class="mults">
+      <div class="mult"><h4>Trained on MCQ prompts only</h4><div class="bar-row"><div class="bar-label">MCQ</div><div class="bar-track"><div class="bar-fill gate" style="width:90.1%"></div></div><div class="bar-val">0.901</div></div><div class="bar-row"><div class="bar-label">Open</div><div class="bar-track"><div class="bar-fill gate" style="width:48.6%"></div></div><div class="bar-val">0.486</div></div><div class="axis"><div></div><div class="axis-line"><b style="left:0">0</b><b style="left:50%">0.50</b><b style="left:100%">1.0</b></div><div></div></div></div>
+      <div class="mult"><h4>Trained on both formats</h4><div class="bar-row"><div class="bar-label">MCQ</div><div class="bar-track"><div class="bar-fill gate" style="width:85.6%"></div></div><div class="bar-val">0.856</div></div><div class="bar-row"><div class="bar-label">Open</div><div class="bar-track"><div class="bar-fill gate" style="width:87.2%"></div></div><div class="bar-val">0.872</div></div><div class="axis"><div></div><div class="axis-line"><b style="left:0">0</b><b style="left:50%">0.50</b><b style="left:100%">1.0</b></div><div></div></div></div>
     </div>
-
-    <div class="bar-group">
-      <div class="bar-row"><div class="bar-label">layer 16</div><div class="bar-track"><div class="bar-fill" style="width:92.0%"></div></div><div class="bar-val">0.920</div></div>
-      <div class="bar-row"><div class="bar-label">open format</div><div class="bar-track"><div class="bar-fill held" style="width:86.9%"></div></div><div class="bar-val">0.869</div></div>
-    </div>
-
-    <div class="bar-group">
-      <div class="bar-row"><div class="bar-label">layer 20</div><div class="bar-track"><div class="bar-fill" style="width:92.0%"></div></div><div class="bar-val">0.920</div></div>
-      <div class="bar-row"><div class="bar-label">open format</div><div class="bar-track"><div class="bar-fill held" style="width:84.9%"></div></div><div class="bar-val">0.849</div></div>
-    </div>
-
     <div class="chart-foot">
-      <span class="key"><i class="b"></i>multiple-choice prompt</span>
-      <span class="key"><i class="r"></i>open-format prompt, same classifier</span>
+      <span>243 holdout questions, each posed as a multiple-choice item and as an open question with no options. Specificity on 500 unseen retain questions stays between 0.910 and 0.928 in all four cases</span>
+    </div>
+  </div>
+
+</section>
+
+<!-- ============================ 11. STAGE 2: REWORDING ============================ -->
+
+<section class="col">
+  <div class="eyebrow">11 &middot; Stage 2</div>
+  <h2>Rewording attacks on the gate</h2>
+
+  <p>
+    The Stage 1 rephrasing and indirect sets cannot test the gate fairly. Their source
+    questions come from the forget set the probe was trained on, and both were written by
+    Qwen models, the family of the protected model, so the probe could be recognising the
+    items or the writer rather than the topic. A new set was written with Claude Opus 5.5
+    under the rules of the indirect set in Section 6.4: 4,765 original pharmacology
+    questions across 48 topics, each in three versions sharing options and answer.
+    The <strong>direct</strong> version names the drug, the <strong>paraphrase</strong>
+    rewords it keeping drug and mechanism names, and the <strong>indirect</strong> version
+    removes them. Items close to existing MedMCQA questions, and indirect versions that
+    still named the drug class, were dropped.
+  </p>
+
+  <p>
+    Because the three versions share an id, rewording is measured on the same questions.
+    The <strong>leak rate</strong> is the share of questions blocked when asked directly
+    that pass once reworded. False blocks are measured on 500 retain questions the probe
+    never saw.
+  </p>
+
+  <div class="plot">
+    <div class="plot-head"><span>Figure 11. Leak rate against false blocks, across gate thresholds</span><span>4,765 questions</span></div>
+    <div style="overflow-x:auto"><svg viewBox="0 0 646 290" role="img" aria-label="Leak rate against false-block rate across gate thresholds" style="display:block;width:100%;min-width:560px;height:auto"><line x1="46" y1="238.0" x2="620" y2="238.0" stroke="#E4EAED" stroke-width="1"/><text x="38.0" y="242.0" font-family="Google Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" fill="#5E6C74" text-anchor="end">0</text><line x1="46" y1="195.2" x2="620" y2="195.2" stroke="#E4EAED" stroke-width="1"/><text x="38.0" y="199.2" font-family="Google Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" fill="#5E6C74" text-anchor="end">0.05</text><line x1="46" y1="152.4" x2="620" y2="152.4" stroke="#E4EAED" stroke-width="1"/><text x="38.0" y="156.4" font-family="Google Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" fill="#5E6C74" text-anchor="end">0.10</text><line x1="46" y1="109.6" x2="620" y2="109.6" stroke="#E4EAED" stroke-width="1"/><text x="38.0" y="113.6" font-family="Google Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" fill="#5E6C74" text-anchor="end">0.15</text><line x1="46" y1="66.8" x2="620" y2="66.8" stroke="#E4EAED" stroke-width="1"/><text x="38.0" y="70.8" font-family="Google Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" fill="#5E6C74" text-anchor="end">0.20</text><line x1="46" y1="24.0" x2="620" y2="24.0" stroke="#E4EAED" stroke-width="1"/><text x="38.0" y="28.0" font-family="Google Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" fill="#5E6C74" text-anchor="end">0.25</text><text x="46.0" y="256.0" font-family="Google Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" fill="#5E6C74" text-anchor="middle">0.04</text><text x="210.0" y="256.0" font-family="Google Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" fill="#5E6C74" text-anchor="middle">0.06</text><text x="374.0" y="256.0" font-family="Google Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" fill="#5E6C74" text-anchor="middle">0.08</text><text x="538.0" y="256.0" font-family="Google Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" fill="#5E6C74" text-anchor="middle">0.10</text><text x="333.0" y="276.0" font-family="Google Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.5" fill="#35454F" text-anchor="middle">False blocks on retain questions</text><text x="6.0" y="12.0" font-family="Google Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="11" fill="#35454F" text-anchor="start">Leak rate</text><polyline points="554.4,161.8 472.4,153.3 357.6,149.8 242.8,144.7 210.0,133.6 128.0,123.3" fill="none" stroke="#c18000" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="554.4" cy="161.8" r="4" fill="#c18000" stroke="#FFFFFF" stroke-width="2"/><circle cx="472.4" cy="153.3" r="4" fill="#c18000" stroke="#FFFFFF" stroke-width="2"/><circle cx="357.6" cy="149.8" r="4" fill="#c18000" stroke="#FFFFFF" stroke-width="2"/><circle cx="242.8" cy="144.7" r="4" fill="#c18000" stroke="#FFFFFF" stroke-width="2"/><circle cx="210.0" cy="133.6" r="4" fill="#c18000" stroke="#FFFFFF" stroke-width="2"/><circle cx="128.0" cy="123.3" r="4" fill="#c18000" stroke="#FFFFFF" stroke-width="2"/><polyline points="554.4,106.2 472.4,93.3 357.6,85.6 242.8,73.6 210.0,61.7 128.0,41.1" fill="none" stroke="#A8452B" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="554.4" cy="106.2" r="4" fill="#A8452B" stroke="#FFFFFF" stroke-width="2"/><circle cx="472.4" cy="93.3" r="4" fill="#A8452B" stroke="#FFFFFF" stroke-width="2"/><circle cx="357.6" cy="85.6" r="4" fill="#A8452B" stroke="#FFFFFF" stroke-width="2"/><circle cx="242.8" cy="73.6" r="4" fill="#A8452B" stroke="#FFFFFF" stroke-width="2"/><circle cx="210.0" cy="61.7" r="4" fill="#A8452B" stroke="#FFFFFF" stroke-width="2"/><circle cx="128.0" cy="41.1" r="4" fill="#A8452B" stroke="#FFFFFF" stroke-width="2"/><text x="554.4" y="96.2" font-family="Google Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10" fill="#5E6C74" text-anchor="middle">0.3</text><text x="472.4" y="83.3" font-family="Google Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10" fill="#5E6C74" text-anchor="middle">0.4</text><text x="357.6" y="75.6" font-family="Google Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10" fill="#5E6C74" text-anchor="middle">0.5</text><text x="242.8" y="63.6" font-family="Google Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10" fill="#5E6C74" text-anchor="middle">0.6</text><text x="210.0" y="51.7" font-family="Google Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10" fill="#5E6C74" text-anchor="middle">0.7</text><text x="128.0" y="31.1" font-family="Google Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10" fill="#5E6C74" text-anchor="middle">0.8</text></svg></div>
+    <div class="chart-foot">
+      <span class="key"><i class="am"></i>leak, paraphrase</span>
+      <span class="key"><i class="r"></i>leak, indirect</span>
+      <span>Point labels give the threshold</span>
     </div>
   </div>
 
   <p style="margin-top:26px">
-    The transfer is not uniform across depth, and the cutoff is sharp. At layers 4
-    through 12, accuracy on the open-format prompt collapses to 0.50 to 0.52, chance,
-    even though the same layers scored 0.84 to 0.93 in distribution. Ranking quality
-    (AUC) only falls to 0.78 to 0.84 there rather than to chance, so the ordering
-    information survives; what breaks is the decision boundary, fit on multiple-choice
-    activations whose scale shifts once the prompt no longer ends on the same token. From
-    layer 16 on, accuracy holds at 0.82 to 0.87, a real drop from the in-distribution
-    figure but well above chance. The likely reason is that shallow layers are still
-    driven by the identity of the last token, which differs between the two prompt
-    templates, while deeper layers have settled into a representation closer to what the
-    question is about.
+    At threshold 0.5 the gate blocks 83% of direct questions and 7.8% of retain
+    questions. Rewording lets 10% of the blocked questions through as paraphrases and 18%
+    as indirect questions. The threshold only trades one cost for the other: at 0.3 the
+    indirect leak falls to 15% with 10% false blocks, at 0.8 false blocks halve and the
+    leak rises to 23%. The direct block rate on these generated questions, 0.83, is close
+    to the 0.86 on the real holdout questions, so the probe carries over to questions
+    written by a different model.
   </p>
 
-  <div class="note">
-    <b>Reading this result.</b> Feasibility is confirmed from roughly layer 16 onward:
-    the topic is present in the activations and legible across both rewording and answer
-    format there. It is not confirmed at shallow layers, despite their in-distribution
-    accuracy looking equally strong, which is exactly the failure mode this check was
-    run to catch. Layer 16 is the current working choice for the gate, with layer 20
-    close behind. These numbers are a single 80/20 split, not cross-validated, so treat
-    differences of a point or two between neighbouring layers as noise.
+  <p>
+    Relearning and activation recovery do not apply. They restore knowledge suppressed in
+    the weights or the residual stream, and the gate suppresses nothing in the model.
+  </p>
+</section>
+
+<!-- ============================ 12. STAGE 2: AGAINST ALU ============================ -->
+
+<section class="col">
+  <div class="eyebrow">12 &middot; Stage 2</div>
+  <h2>The gate against ALU</h2>
+
+  <p>
+    Both inference-time defences were run on the same 1,000 generated questions in all
+    three versions and on the same 500 retain questions. ALU was reduced to its detection
+    stage: the model answers, and ALU's auditor decides whether the answer leaks
+    pharmacology, a leak verdict counting as a block. This is how the ALU paper itself
+    scores multiple-choice benchmarks, and it bounds what the full pipeline can suppress,
+    since an answer the auditor misses passes through unchanged.
+  </p>
+
+  <div class="table-shell" style="margin-top:22px">
+    <table>
+      <caption>Table 6. Gate (threshold 0.5) against ALU's detection stage on the same items. Leak: share of questions blocked when asked directly that pass once reworded.</caption>
+      <thead>
+        <tr><th style="text-align:left">Method</th><th>Blocked, direct</th><th>Blocked, paraphrase</th><th>Blocked, indirect</th><th>Leak, paraphrase</th><th>Leak, indirect</th><th>False blocks</th></tr>
+      </thead>
+      <tbody>
+        <tr><td style="text-align:left">Gate</td><td class="lo">0.848</td><td>0.793</td><td>0.748</td><td class="lo">0.101</td><td>0.165</td><td>0.078</td></tr>
+        <tr><td style="text-align:left">ALU, detection</td><td class="hi">0.546</td><td>0.586</td><td>0.636</td><td class="hi">0.218</td><td>0.205</td><td>0.074</td></tr>
+      </tbody>
+    </table>
   </div>
 
-  <details>
-    <summary>Full layer sweep, all figures</summary>
-    <div class="body">
-      <div class="table-shell" style="border:none">
-        <table>
-          <caption>Table 6. Feasibility classifier, all cached layers, seed 44.</caption>
-          <thead>
-            <tr><th>Layer</th><th>Val. accuracy</th><th>Val. AUC</th><th>Paraphrase recall</th><th>Indirect recall</th><th>Open-format accuracy</th><th>Open-format AUC</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>0</td><td>0.500</td><td>0.500</td><td>0.000</td><td>0.000</td><td>0.500</td><td>0.500</td></tr>
-            <tr><td>4</td><td>0.838</td><td>0.914</td><td>0.808</td><td>0.874</td><td>0.506</td><td>0.780</td></tr>
-            <tr><td>8</td><td>0.905</td><td>0.960</td><td>0.886</td><td>0.848</td><td>0.500</td><td>0.842</td></tr>
-            <tr><td>12</td><td>0.927</td><td>0.969</td><td>0.892</td><td>0.886</td><td>0.516</td><td>0.838</td></tr>
-            <tr><td>16</td><td>0.920</td><td>0.968</td><td>0.880</td><td>0.888</td><td>0.869</td><td>0.933</td></tr>
-            <tr><td>20</td><td>0.920</td><td>0.972</td><td>0.900</td><td>0.878</td><td>0.849</td><td>0.930</td></tr>
-            <tr><td>24</td><td>0.910</td><td>0.971</td><td>0.900</td><td>0.902</td><td>0.860</td><td>0.928</td></tr>
-            <tr><td>28</td><td>0.925</td><td>0.970</td><td>0.882</td><td>0.880</td><td>0.827</td><td>0.900</td></tr>
-            <tr><td>32</td><td>0.912</td><td>0.970</td><td>0.852</td><td>0.858</td><td>0.848</td><td>0.931</td></tr>
-            <tr><td>36</td><td>0.922</td><td>0.970</td><td>0.850</td><td>0.840</td><td>0.824</td><td>0.934</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <p style="margin-top:16px;font-size:14px">
-        Probe: <span class="term">src/unlearning/gate/MT_train_gate_probe.py</span>,
-        <span class="term">MT_eval_gate_format_transfer.py</span>. Activations:
-        <span class="term">src/unlearning/gate/MT_extract_gate_activations.py</span>,
-        run against <span class="term">models/MT-s0-14b-expl-sft-seed44-v1</span> on
-        <span class="term">data/medmcqa_unlearning_data_nolabel</span>. StandardScaler
-        fit on the training split only, logistic regression, stratified 80/20 split,
-        seed 44.
-      </p>
+  <div class="plot">
+    <div class="plot-head"><span>Figure 12. Gate against ALU's detection stage</span><span>same 1,000 questions &middot; scale 0 to 1</span></div>
+    <div class="mults">
+      <div class="mult"><h4>Gate &middot; blocked</h4><div class="bar-row"><div class="bar-label">Direct</div><div class="bar-track"><div class="bar-fill gate" style="width:84.8%"></div></div><div class="bar-val">0.848</div></div><div class="bar-row"><div class="bar-label">Paraphrase</div><div class="bar-track"><div class="bar-fill gate" style="width:79.3%"></div></div><div class="bar-val">0.793</div></div><div class="bar-row"><div class="bar-label">Indirect</div><div class="bar-track"><div class="bar-fill gate" style="width:74.8%"></div></div><div class="bar-val">0.748</div></div><div class="bar-row"><div class="bar-label">Retain</div><div class="bar-track"><div class="bar-fill gate" style="width:7.8%"></div></div><div class="bar-val">0.078</div></div><div class="axis"><div></div><div class="axis-line"><b style="left:0">0</b><b style="left:50%">0.50</b><b style="left:100%">1.0</b></div><div></div></div></div>
+      <div class="mult"><h4>ALU &middot; blocked</h4><div class="bar-row"><div class="bar-label">Direct</div><div class="bar-track"><div class="bar-fill alu" style="width:54.6%"></div></div><div class="bar-val">0.546</div></div><div class="bar-row"><div class="bar-label">Paraphrase</div><div class="bar-track"><div class="bar-fill alu" style="width:58.6%"></div></div><div class="bar-val">0.586</div></div><div class="bar-row"><div class="bar-label">Indirect</div><div class="bar-track"><div class="bar-fill alu" style="width:63.6%"></div></div><div class="bar-val">0.636</div></div><div class="bar-row"><div class="bar-label">Retain</div><div class="bar-track"><div class="bar-fill alu" style="width:7.4%"></div></div><div class="bar-val">0.074</div></div><div class="axis"><div></div><div class="axis-line"><b style="left:0">0</b><b style="left:50%">0.50</b><b style="left:100%">1.0</b></div><div></div></div></div>
+      <div class="mult"><h4>Gate &middot; leak after rewording</h4><div class="bar-row"><div class="bar-label">Paraphrase</div><div class="bar-track"><div class="bar-fill gate" style="width:10.1%"></div></div><div class="bar-val">0.101</div></div><div class="bar-row"><div class="bar-label">Indirect</div><div class="bar-track"><div class="bar-fill gate" style="width:16.5%"></div></div><div class="bar-val">0.165</div></div><div class="axis"><div></div><div class="axis-line"><b style="left:0">0</b><b style="left:50%">0.50</b><b style="left:100%">1.0</b></div><div></div></div></div>
+      <div class="mult"><h4>ALU &middot; leak after rewording</h4><div class="bar-row"><div class="bar-label">Paraphrase</div><div class="bar-track"><div class="bar-fill alu" style="width:21.8%"></div></div><div class="bar-val">0.218</div></div><div class="bar-row"><div class="bar-label">Indirect</div><div class="bar-track"><div class="bar-fill alu" style="width:20.5%"></div></div><div class="bar-val">0.205</div></div><div class="axis"><div></div><div class="axis-line"><b style="left:0">0</b><b style="left:50%">0.50</b><b style="left:100%">1.0</b></div><div></div></div></div>
+      <div class="mult"><h4>Gate &middot; same decision</h4><div class="bar-row"><div class="bar-label">Paraphrase</div><div class="bar-track"><div class="bar-fill gate" style="width:88.3%"></div></div><div class="bar-val">0.883</div></div><div class="bar-row"><div class="bar-label">Indirect</div><div class="bar-track"><div class="bar-fill gate" style="width:82.0%"></div></div><div class="bar-val">0.820</div></div><div class="axis"><div></div><div class="axis-line"><b style="left:0">0</b><b style="left:50%">0.50</b><b style="left:100%">1.0</b></div><div></div></div></div>
+      <div class="mult"><h4>ALU &middot; same decision</h4><div class="bar-row"><div class="bar-label">Paraphrase</div><div class="bar-track"><div class="bar-fill alu" style="width:72.2%"></div></div><div class="bar-val">0.722</div></div><div class="bar-row"><div class="bar-label">Indirect</div><div class="bar-track"><div class="bar-fill alu" style="width:68.6%"></div></div><div class="bar-val">0.686</div></div><div class="axis"><div></div><div class="axis-line"><b style="left:0">0</b><b style="left:50%">0.50</b><b style="left:100%">1.0</b></div><div></div></div></div>
     </div>
-  </details>
+    <div class="chart-foot">
+      <span class="key"><i class="g"></i>activation probe gate</span>
+      <span class="key"><i class="a"></i>ALU detection stage</span>
+      <span>Retain row is the false-block rate. Same decision: share of questions where the direct and reworded versions get the same verdict</span>
+    </div>
+  </div>
 
-  <h3>Next</h3>
+  <p style="margin-top:26px">
+    At the same false-block rate, 7.8% against 7.4%, the gate blocks 85% of direct
+    questions to ALU's 55%, and fewer of its blocks are undone by rewording: 10% against
+    22% for paraphrases, 17% against 21% for indirect questions. In Section 6.4 ALU
+    refused more often on indirect questions than on direct ones, which read as
+    robustness. Paired by question it is instability: ALU gives the direct and reworded
+    versions the same verdict only 72% and 69% of the time, the gate 88% and 82%.
+  </p>
+
+  <h3>Limits</h3>
   <ul class="items">
-    <li><b>Wire the classifier into an actual gate</b> that withholds generation when it fires, rather than just scoring held-out accuracy.</li>
-    <li><b>Run the gate through the Stage 1 attack map</b> to confirm it closes the holes rephrasing and indirect questions left open, while keeping the relearning immunity that comes from never touching the weights.</li>
-    <li><b>Cross-validate the layer choice</b> rather than relying on a single 80/20 split, before finalising layer 16 over layer 20.</li>
+    <li><b>The gate leaks.</b> It resists rewording better than ALU's detection stage, but 10 to 18% of blocked questions still pass once reworded.</li>
+    <li><b>Narrow scope.</b> One model, one topic, one layer, a single threshold, and a test set written by one model family.</li>
+    <li><b>Reduced baseline.</b> The comparison covers ALU's detection stage with open-weight Qwen agents and a domain-level target; the original used GPT-4o and named entities.</li>
+    <li><b>Closed weights only.</b> Anyone holding the weights can drop the gate, so it is a control for served models, not removal of the knowledge. Stage 3 attacks it directly, with inputs crafted so their activations pass, and tests it stacked on RMU.</li>
   </ul>
 </section>
 
@@ -1947,11 +2006,9 @@
 
 <footer class="col">
   <p>
-    Stage 1 of a six-month thesis on robust LLM unlearning across the weight and
-    inference-time divide. Stage 2 builds a gate that reads the model's internal
-    representation of a question and blocks before generation; a first feasibility
-    check now confirms that representation is legible from around layer 16 on, across
-    both rewording and answer format. Stage 3 tests the gate adversarially.
+    Stages 1 and 2 of a six-month thesis on robust LLM unlearning across the weight and
+    inference-time divide. Stage 3 attacks the gate directly, with inputs crafted so
+    their activations pass it, and tests it stacked on RMU as a layered defence.
   </p>
 </footer>
 
